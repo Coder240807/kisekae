@@ -1,4 +1,4 @@
-package com.example.kisekae
+package live.kisekae.app
 
 import io.flutter.embedding.android.FlutterActivity
 

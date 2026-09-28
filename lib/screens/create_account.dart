@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/services/google_auth.dart';
 
 class CreateAccount extends StatefulWidget {
   const CreateAccount({super.key});
@@ -9,6 +11,7 @@ class CreateAccount extends StatefulWidget {
 
 class _CreateAccountState extends State<CreateAccount> {
   final _form = GlobalKey<FormState>();
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -19,11 +22,29 @@ class _CreateAccountState extends State<CreateAccount> {
 
   bool _obscurePassword = true;
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_form.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account Created Successfully!')),
+      final success = await EmailAuth().signUp(
+        _nameController.text,
+        _emailController.text,
+        _passwordController.text,
       );
+      if (!mounted) return;
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Account registered successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to register account'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -39,6 +60,7 @@ class _CreateAccountState extends State<CreateAccount> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     return Theme(
       data: Theme.of(context).copyWith(
         textTheme: Theme.of(context).textTheme.apply(fontFamily: 'sans-serif'),
@@ -68,24 +90,23 @@ class _CreateAccountState extends State<CreateAccount> {
         backgroundColor: const Color(0xFFEEE9E4),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 25.0,
-              vertical: 15.0,
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.065,
+              vertical: size.height * 0.01,
             ),
             child: Form(
               key: _form,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
-                  const Center(
+                  Center(
                     child: Text(
                       'enter your details',
 
-                      style: TextStyle(fontSize: 15),
+                      style: TextStyle(fontSize: size.width * 0.04),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: size.height * 0.025),
 
                   _inputField(
                     label: 'Full Name',
@@ -98,7 +119,7 @@ class _CreateAccountState extends State<CreateAccount> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: size.height * 0.015),
 
                   _inputField(
                     label: 'Email',
@@ -119,25 +140,7 @@ class _CreateAccountState extends State<CreateAccount> {
                     },
                   ),
 
-                  const SizedBox(height: 12),
-
-                  _inputField(
-                    label: 'Mobile number',
-                    hintText: 'enter your number',
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your mobile number';
-                      }
-                      if (value.trim().length < 10) {
-                        return 'Enter a valid mobile number';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 12),
+                  SizedBox(height: size.height * 0.015),
 
                   _inputField(
                     label: 'Password',
@@ -169,7 +172,7 @@ class _CreateAccountState extends State<CreateAccount> {
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: size.height * 0.015),
 
                   _inputField(
                     label: 'Confirm password',
@@ -186,63 +189,71 @@ class _CreateAccountState extends State<CreateAccount> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 28),
+                  SizedBox(height: size.height * 0.035),
 
                   ElevatedButton(
                     onPressed: _submitForm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF8B2E3E),
                       foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
+                      minimumSize: Size(double.infinity, size.height * 0.06),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
+                    child: Text(
                       'CREATE ACCOUNT',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: size.width * 0.04,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  SizedBox(height: size.height * 0.04),
 
-                  const Row(
+                  Row(
                     children: [
-                      Expanded(
+                      const Expanded(
                         child: Divider(color: Colors.black, thickness: 0.8),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
                         child: Text(
                           'or signup with',
-                          style: TextStyle(fontSize: 14, color: Colors.black),
+                          style: TextStyle(
+                            fontSize: size.width * 0.037,
+                            color: Colors.black,
+                          ),
                         ),
                       ),
-                      Expanded(
+                      const Expanded(
                         child: Divider(color: Colors.black, thickness: 0.8),
                       ),
                     ],
                   ),
-                  SizedBox(height: 32),
+                  SizedBox(height: size.height * 0.04),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Image.asset('assets/images/icons/apple.png'),
-                        ),
-                      ),
-                      SizedBox(width: 56),
-                      CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Image.asset('assets/images/icons/google.png'),
+                      GestureDetector(
+                        onTap: () async {
+                          final success = await _googleAuthService
+                              .signInAndAuthenticate();
+                          if (success) {
+                            print("Google login successful");
+                          } else {
+                            print("Google login failed");
+                          }
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Image.asset(
+                              'assets/images/icons/google.png',
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -269,14 +280,18 @@ class _CreateAccountState extends State<CreateAccount> {
       borderRadius: BorderRadius.circular(15),
       borderSide: const BorderSide(color: Colors.black, width: 1),
     );
+    final size = MediaQuery.of(context).size;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: size.width * 0.035,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: size.height * 0.006),
         TextFormField(
           controller: controller,
           obscureText: obscureText,
@@ -284,10 +299,10 @@ class _CreateAccountState extends State<CreateAccount> {
           validator: validator,
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: const TextStyle(fontSize: 14),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
+            hintStyle: TextStyle(fontSize: size.width * 0.04),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.04,
+              vertical: size.height * 0.015,
             ),
             filled: true,
             fillColor: const Color(0xFFEEE0E2),

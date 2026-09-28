@@ -7,6 +7,8 @@ class GettingStartedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Theme(
       data: Theme.of(context).copyWith(
         textTheme: Theme.of(context).textTheme.apply(fontFamily: 'sans-serif'),
@@ -14,38 +16,42 @@ class GettingStartedScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFFEEE9E4),
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 25.0,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.06,
               vertical: 20.0,
             ),
             child: Column(
               children: [
-                const SizedBox(height: 100),
+                SizedBox(height: size.height * 0.1),
                 Image.asset(
                   'assets/images/pic1.png',
-                  height: 250,
+                  height: size.height * 0.3,
                   fit: BoxFit.contain,
                   color: const Color(0xFFEEE9E4),
                   colorBlendMode: BlendMode.multiply,
                 ),
 
-                const SizedBox(height: 35),
+                SizedBox(height: size.height * 0.04),
 
-                const Text(
+                Text(
                   'Let’s Get Started',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: size.width * 0.065,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
 
                 const SizedBox(height: 10),
 
-                const Text(
+                Text(
                   'sign in to your account or create a account',
-                  style: TextStyle(fontSize: 15),
+                  style: TextStyle(fontSize: size.width * 0.04),
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 30),
+                SizedBox(height: size.height * 0.04),
+
                 ElevatedButton(
                   onPressed: () {
                     Navigator.push(
@@ -56,15 +62,18 @@ class GettingStartedScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B2E3E),
                     foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50),
+                    minimumSize: Size(double.infinity, size.height * 0.065),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
+                  child: Text(
                     'sign in',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: size.width * 0.04,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
 
@@ -81,7 +90,7 @@ class GettingStartedScreen extends StatelessWidget {
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF8B2E3E),
-                    minimumSize: const Size(double.infinity, 54),
+                    minimumSize: Size(double.infinity, size.height * 0.065),
                     side: const BorderSide(
                       color: Color(0xFF8B2E3E),
                       width: 1.2,
@@ -90,9 +99,12 @@ class GettingStartedScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Create Account',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: size.width * 0.04,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
 
