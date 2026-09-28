@@ -226,9 +226,27 @@ class _CreateAccountState extends State<CreateAccount> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-
-                  const Row(mainAxisAlignment: MainAxisAlignment.center),
+                  SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Image.asset('assets/images/icons/apple.png'),
+                        ),
+                      ),
+                      SizedBox(width: 56),
+                      CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Image.asset('assets/images/icons/google.png'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

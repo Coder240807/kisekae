@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:kisekae/create_account.dart';
+import 'package:kisekae/screens/create_account.dart';
+import 'package:kisekae/screens/signin.dart';
 
 class GettingStartedScreen extends StatelessWidget {
   const GettingStartedScreen({super.key});
@@ -46,13 +47,18 @@ class GettingStartedScreen extends StatelessWidget {
 
                 const SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const Signin()),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B2E3E),
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
@@ -81,7 +87,7 @@ class GettingStartedScreen extends StatelessWidget {
                       width: 1.2,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: const Text(
