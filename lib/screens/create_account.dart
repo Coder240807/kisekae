@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/services/google_auth.dart';
 
 class CreateAccount extends StatefulWidget {
   const CreateAccount({super.key});
@@ -9,6 +11,7 @@ class CreateAccount extends StatefulWidget {
 
 class _CreateAccountState extends State<CreateAccount> {
   final _form = GlobalKey<FormState>();
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -19,11 +22,29 @@ class _CreateAccountState extends State<CreateAccount> {
 
   bool _obscurePassword = true;
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_form.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account Created Successfully!')),
+      final success = await EmailAuth().signUp(
+        _nameController.text,
+        _emailController.text,
+        _passwordController.text,
       );
+      if (!mounted) return;
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Account registered successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to register account'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -114,24 +135,6 @@ class _CreateAccountState extends State<CreateAccount> {
                       );
                       if (!emailRegex.hasMatch(value)) {
                         return 'Enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: size.height * 0.015),
-
-                  _inputField(
-                    label: 'Mobile number',
-                    hintText: 'enter your number',
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your mobile number';
-                      }
-                      if (value.trim().length < 10) {
-                        return 'Enter a valid mobile number';
                       }
                       return null;
                     },
@@ -233,19 +236,24 @@ class _CreateAccountState extends State<CreateAccount> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Image.asset('assets/images/icons/apple.png'),
-                        ),
-                      ),
-                      SizedBox(width: size.width * 0.14),
-                      CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Image.asset('assets/images/icons/google.png'),
+                      GestureDetector(
+                        onTap: () async {
+                          final success = await _googleAuthService
+                              .signInAndAuthenticate();
+                          if (success) {
+                            print("Google login successful");
+                          } else {
+                            print("Google login failed");
+                          }
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Image.asset(
+                              'assets/images/icons/google.png',
+                            ),
+                          ),
                         ),
                       ),
                     ],

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/services/email_auth.dart';
 import 'package:flutter/services.dart';
 
-class VerifyEmail extends StatefulWidget {
-  const VerifyEmail({super.key});
+class SigninOtp extends StatefulWidget {
+  final String email;
+  const SigninOtp({super.key, required this.email});
 
   @override
-  State<VerifyEmail> createState() => _VerifyEmailState();
+  State<SigninOtp> createState() => _SigninOtpState();
 }
 
-class _VerifyEmailState extends State<VerifyEmail> {
+class _SigninOtpState extends State<SigninOtp> {
   final int _otpLength = 6;
   late final List<FocusNode> _focusNodes;
   late final List<TextEditingController> _controllers;
@@ -16,6 +18,7 @@ class _VerifyEmailState extends State<VerifyEmail> {
   @override
   void initState() {
     super.initState();
+    sendOtp();
     _focusNodes = List.generate(_otpLength, (index) => FocusNode());
     _controllers = List.generate(
       _otpLength,
@@ -85,8 +88,8 @@ class _VerifyEmailState extends State<VerifyEmail> {
           ),
         ),
         centerTitle: true,
-        title: const Text(
-          "Verify your email",
+        title: Text(
+          "Sign in using OTP",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
@@ -95,7 +98,7 @@ class _VerifyEmailState extends State<VerifyEmail> {
         child: Column(
           children: [
             Text(
-              'We have sent a 6 digit code to name@example.com',
+              'We have sent a 6 digit code to ${widget.email}',
               style: TextStyle(fontSize: size.width * 0.045),
             ),
             SizedBox(height: size.height * 0.02),
@@ -109,6 +112,7 @@ class _VerifyEmailState extends State<VerifyEmail> {
                   child: TextField(
                     controller: _controllers[index],
                     focusNode: _focusNodes[index],
+                    maxLength: 1,
                     autofocus: index == 0,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
@@ -130,24 +134,50 @@ class _VerifyEmailState extends State<VerifyEmail> {
                 ),
               ),
             ),
-            const SizedBox(height: 96),
+            SizedBox(height: 96),
             SizedBox(
               width: double.infinity,
               height: 48,
               child: FilledButton(
-                onPressed: () {},
+                onPressed: verifyOtp,
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Verify'),
+                child: const Text('Sign In'),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> sendOtp() async {
+    await EmailAuth().sendOtp(widget.email);
+  }
+
+  Future<void> verifyOtp() async {
+    final otp = int.tryParse(_controllers.map((c) => c.text).join());
+    if (otp == null) return;
+    final success = await EmailAuth().verifyOtp(widget.email, otp);
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Signed in successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to sign in'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
