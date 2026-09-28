@@ -13,8 +13,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
 
   void _submitForm() {
     if (_form.currentState!.validate()) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Password reset email sent!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset email sent!')),
+      );
     }
   }
 
@@ -27,6 +28,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   @override
   Widget build(BuildContext context) {
     ColorScheme colors = Theme.of(context).colorScheme;
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       appBar: AppBar(
@@ -51,20 +53,20 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         ),
       ),
       body: Container(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(size.width * 0.04),
         child: Form(
           key: _form,
           child: Column(
             children: [
               Text(
                 'Enter your email address we will send you a reset link',
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(fontSize: size.width * 0.045),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: size.height * 0.02),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Email", style: TextStyle(fontSize: 16)),
+                  Text("Email", style: TextStyle(fontSize: size.width * 0.04)),
                   TextFormField(
                     controller: _emailController,
                     validator: (value) {
@@ -90,10 +92,10 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   ),
                 ],
               ),
-              SizedBox(height: 96),
+              SizedBox(height: size.height * 0.08),
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: size.height * 0.065,
                 child: FilledButton(
                   onPressed: _submitForm,
                   style: FilledButton.styleFrom(
@@ -101,10 +103,13 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Send reset link'),
+                  child: Text(
+                    'Send reset link',
+                    style: TextStyle(fontSize: size.width * 0.04),
+                  ),
                 ),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: size.height * 0.02),
             ],
           ),
         ),

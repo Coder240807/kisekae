@@ -35,6 +35,7 @@ class _SigninState extends State<Signin> {
   @override
   Widget build(BuildContext context) {
     ColorScheme colors = Theme.of(context).colorScheme;
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       appBar: AppBar(
@@ -56,14 +57,14 @@ class _SigninState extends State<Signin> {
         title: Text("Sign in", style: TextStyle(fontWeight: FontWeight.w600)),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(size.width * 0.04),
         child: Column(
           children: [
             Text(
               'Hi, welcome back sign in to continue your styling journey',
-              style: TextStyle(fontSize: 18),
+              style: TextStyle(fontSize: size.width * 0.045),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: size.height * 0.02),
             DefaultTabController(
               length: 2,
               child: Form(
@@ -85,12 +86,12 @@ class _SigninState extends State<Signin> {
                       unselectedLabelColor: colors.onSurface,
                     ),
                     SizedBox(
-                      height: 250,
+                      height: size.height * 0.27,
                       child: TabBarView(
                         children: [
                           Column(
                             children: [
-                              SizedBox(height: 16),
+                              SizedBox(height: size.height * 0.02),
                               _TextInput(
                                 label: 'Email',
                                 hint: 'enter your email',
@@ -108,7 +109,7 @@ class _SigninState extends State<Signin> {
                                   return null;
                                 },
                               ),
-                              SizedBox(height: 16),
+                              SizedBox(height: size.height * 0.02),
                               _TextInput(
                                 label: 'Password',
                                 hint: 'enter your password',
@@ -142,7 +143,7 @@ class _SigninState extends State<Signin> {
                           ),
                           Column(
                             children: [
-                              SizedBox(height: 16),
+                              SizedBox(height: size.height * 0.02),
                               _TextInput(
                                 label: 'Mobile number',
                                 hint: 'enter your mobile number',
@@ -158,7 +159,7 @@ class _SigninState extends State<Signin> {
                                   return null;
                                 },
                               ),
-                              SizedBox(height: 16),
+                              SizedBox(height: size.height * 0.02),
                               _TextInput(
                                 label: 'Password',
                                 hint: 'enter your password',
@@ -210,7 +211,7 @@ class _SigninState extends State<Signin> {
                   style: TextStyle(
                     decoration: TextDecoration.underline,
                     fontWeight: FontWeight.normal,
-                    fontSize: 16,
+                    fontSize: size.width * 0.04,
                     color: colors.onSurface,
                   ),
                 ),
@@ -218,7 +219,7 @@ class _SigninState extends State<Signin> {
             ),
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: size.height * 0.065,
               child: FilledButton(
                 onPressed: _submitForm,
                 style: FilledButton.styleFrom(
@@ -226,23 +227,26 @@ class _SigninState extends State<Signin> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('SIGN IN'),
+                child: Text(
+                  'SIGN IN',
+                  style: TextStyle(fontSize: size.width * 0.04),
+                ),
               ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: size.height * 0.02),
             Row(
               children: [
                 Expanded(child: Divider()),
                 SizedBox(width: 8),
-                Text("or", style: TextStyle(fontSize: 16)),
+                Text("or", style: TextStyle(fontSize: size.width * 0.04)),
                 SizedBox(width: 8),
                 Expanded(child: Divider()),
               ],
             ),
-            SizedBox(height: 16),
+            SizedBox(height: size.height * 0.02),
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: size.height * 0.065,
               child: OutlinedButton(
                 onPressed: () {
                   Navigator.push(
@@ -258,20 +262,26 @@ class _SigninState extends State<Signin> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('sign in with otp instead'),
+                child: Text(
+                  'sign in with otp instead',
+                  style: TextStyle(fontSize: size.width * 0.04),
+                ),
               ),
             ),
-            SizedBox(height: 36),
+            SizedBox(height: size.height * 0.02),
             Row(
               children: [
                 Expanded(child: Divider()),
                 SizedBox(width: 8),
-                Text("or signin with", style: TextStyle(fontSize: 16)),
+                Text(
+                  "or sign in with",
+                  style: TextStyle(fontSize: size.width * 0.04),
+                ),
                 SizedBox(width: 8),
                 Expanded(child: Divider()),
               ],
             ),
-            SizedBox(height: 32),
+            SizedBox(height: size.height * 0.03),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -282,7 +292,7 @@ class _SigninState extends State<Signin> {
                     child: Image.asset('assets/images/icons/apple.png'),
                   ),
                 ),
-                SizedBox(width: 56),
+                SizedBox(width: size.width * 0.14),
                 CircleAvatar(
                   backgroundColor: Colors.white,
                   child: Padding(
@@ -321,11 +331,12 @@ class _TextInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     ColorScheme colors = Theme.of(context).colorScheme;
+    final size = MediaQuery.of(context).size;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 16)),
+        Text(label, style: TextStyle(fontSize: size.width * 0.04)),
         TextFormField(
           controller: controller,
           obscureText: obscureText,
