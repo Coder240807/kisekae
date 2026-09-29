@@ -95,7 +95,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         setState(() => _otpSent = true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('If an account exists, a password reset code has been sent!'),
+            content: Text(
+              'If an account exists, a password reset code has been sent!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -269,98 +271,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   ),
                 ],
               ),
-              if (_otpSent) ...[
-                const SizedBox(height: 24),
-                const Text(
-                  "Enter 6-digit code",
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(
-                    _otpLength,
-                    (index) => SizedBox(
-                      height: size.height * 0.08,
-                      width: size.width * 0.125,
-                      child: TextField(
-                        controller: _otpControllers[index],
-                        focusNode: _otpFocusNodes[index],
-                        maxLength: 1,
-                        autofocus: index == 0,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        onChanged: (value) => _onOtpChanged(value, index),
-                        decoration: InputDecoration(
-                          counterText: "",
-                          filled: true,
-                          fillColor: colors.surfaceContainerHighest,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: _handleSendOtp,
-                    child: const Text('Resend code'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("New Password", style: TextStyle(fontSize: 16)),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a new password';
-                        }
-                        if (value.length < 8) {
-                          return 'Password must be at least 8 characters';
-                        }
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        hintText: "enter your new password",
-                        filled: true,
-                        fillColor: colors.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: Colors.black,
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
               SizedBox(height: size.height * 0.08),
               SizedBox(
                 width: double.infinity,
