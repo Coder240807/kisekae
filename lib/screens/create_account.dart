@@ -174,6 +174,24 @@ class _CreateAccountState extends State<CreateAccount> {
                   SizedBox(height: size.height * 0.015),
 
                   _inputField(
+                    label: 'Mobile number',
+                    hintText: 'enter your number',
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter your mobile number';
+                      }
+                      if (value.trim().length < 10) {
+                        return 'Enter a valid mobile number';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  SizedBox(height: size.height * 0.015),
+
+                  _inputField(
                     label: 'Password',
                     hintText: 'enter your password',
                     controller: _passwordController,

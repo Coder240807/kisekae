@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/create_account.dart';
 import 'package:kisekae/screens/signin.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class GettingStartedScreen extends StatelessWidget {
   const GettingStartedScreen({super.key});
@@ -24,8 +25,8 @@ class GettingStartedScreen extends StatelessWidget {
             child: Column(
               children: [
                 SizedBox(height: size.height * 0.1),
-                Image.asset(
-                  'assets/images/pic1.png',
+                SvgPicture.asset(
+                  'assets/images/pic1.svg',
                   height: size.height * 0.3,
                   fit: BoxFit.contain,
                   color: const Color(0xFFEEE9E4),
