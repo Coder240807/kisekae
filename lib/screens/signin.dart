@@ -35,10 +35,10 @@ class _SigninState extends State<Signin> {
           ),
         );
         Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(builder: (_) => const HomeScreen()),
-  (route) => false,
-);
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -279,7 +279,7 @@ class _SigninState extends State<Signin> {
                     backgroundColor: Colors.white,
                     child: Padding(
                       padding: const EdgeInsets.all(8),
-                      child: Image.asset('assets/images/icons/google.png'),
+                      child: Image.asset('assets/icons/google.png'),
                     ),
                   ),
                 ),

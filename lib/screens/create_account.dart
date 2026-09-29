@@ -16,7 +16,6 @@ class _CreateAccountState extends State<CreateAccount> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
@@ -83,7 +82,6 @@ class _CreateAccountState extends State<CreateAccount> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -166,24 +164,6 @@ class _CreateAccountState extends State<CreateAccount> {
                       );
                       if (!emailRegex.hasMatch(value)) {
                         return 'Enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: size.height * 0.015),
-
-                  _inputField(
-                    label: 'Mobile number',
-                    hintText: 'enter your number',
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your mobile number';
-                      }
-                      if (value.trim().length < 10) {
-                        return 'Enter a valid mobile number';
                       }
                       return null;
                     },
@@ -291,9 +271,7 @@ class _CreateAccountState extends State<CreateAccount> {
                           backgroundColor: Colors.white,
                           child: Padding(
                             padding: const EdgeInsets.all(8),
-                            child: Image.asset(
-                              'assets/images/icons/google.png',
-                            ),
+                            child: Image.asset('assets/icons/google.png'),
                           ),
                         ),
                       ),
