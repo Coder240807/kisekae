@@ -29,6 +29,9 @@ class MyApp extends StatelessWidget {
         ),
       ),
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
+      initialRoute: '/login',
+      routes: {'/login': (context) => const GettingStartedScreen()},
       home: const GettingStartedScreen(),
     );
   }
