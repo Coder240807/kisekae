@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/forgot_password.dart';
-import 'package:kisekae/screens/verify_email.dart';
+import 'package:kisekae/screens/signin_otp.dart';
+import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/services/google_auth.dart';
 
 class Signin extends StatefulWidget {
   const Signin({super.key});
@@ -12,22 +14,39 @@ class Signin extends StatefulWidget {
 class _SigninState extends State<Signin> {
   final _form = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
 
   bool _obscurePassword = true;
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_form.currentState!.validate()) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Login Successfully!')));
+      final success = await EmailAuth().signIn(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (!mounted) return;
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Signed in successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to sign in'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   void dispose() {
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -64,135 +83,60 @@ class _SigninState extends State<Signin> {
               'Hi, welcome back sign in to continue your styling journey',
               style: TextStyle(fontSize: size.width * 0.045),
             ),
-            SizedBox(height: size.height * 0.02),
-            DefaultTabController(
-              length: 2,
-              child: Form(
-                key: _form,
-                child: Column(
-                  children: [
-                    TabBar(
-                      tabs: [
-                        Tab(text: 'Email'),
-                        Tab(text: 'Mobile'),
-                      ],
-                      indicator: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: const Color(0xFF81253A),
+            SizedBox(height: 16),
+            Form(
+              key: _form,
+              child: Column(
+                children: [
+                  _TextInput(
+                    label: 'Email',
+                    hint: 'enter your email',
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      final emailRegex = RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      );
+                      if (!emailRegex.hasMatch(value)) {
+                        return 'Enter a valid email address';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  _TextInput(
+                    label: 'Password',
+                    hint: 'enter your password',
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: Colors.black,
+                        size: 20,
                       ),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: colors.onSurface,
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
-                    SizedBox(
-                      height: size.height * 0.27,
-                      child: TabBarView(
-                        children: [
-                          Column(
-                            children: [
-                              SizedBox(height: size.height * 0.02),
-                              _TextInput(
-                                label: 'Email',
-                                hint: 'enter your email',
-                                controller: _emailController,
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Please enter your email';
-                                  }
-                                  final emailRegex = RegExp(
-                                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                                  );
-                                  if (!emailRegex.hasMatch(value)) {
-                                    return 'Enter a valid email address';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              SizedBox(height: size.height * 0.02),
-                              _TextInput(
-                                label: 'Password',
-                                hint: 'enter your password',
-                                controller: _passwordController,
-                                obscureText: _obscurePassword,
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                    color: Colors.black,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter a password';
-                                  }
-                                  if (value.length < 8) {
-                                    return 'Password must be at least 8 characters';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              SizedBox(height: size.height * 0.02),
-                              _TextInput(
-                                label: 'Mobile number',
-                                hint: 'enter your mobile number',
-                                controller: _phoneController,
-                                keyboardType: TextInputType.phone,
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Please enter your mobile number';
-                                  }
-                                  if (value.trim().length < 10) {
-                                    return 'Enter a valid mobile number';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              SizedBox(height: size.height * 0.02),
-                              _TextInput(
-                                label: 'Password',
-                                hint: 'enter your password',
-                                controller: _passwordController,
-                                obscureText: _obscurePassword,
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                    color: Colors.black,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter a password';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a password';
+                      }
+                      if (value.length < 8) {
+                        return 'Password must be at least 8 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
               ),
             ),
             Align(
@@ -202,7 +146,8 @@ class _SigninState extends State<Signin> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ForgotPassword(),
+                      builder: (context) =>
+                          ForgotPassword(email: _emailController.text.trim()),
                     ),
                   );
                 },
@@ -249,10 +194,23 @@ class _SigninState extends State<Signin> {
               height: size.height * 0.065,
               child: OutlinedButton(
                 onPressed: () {
+                  final email = _emailController.text.trim();
+                  final emailRegex = RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  );
+                  if (!emailRegex.hasMatch(email)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter a valid email address'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const VerifyEmail(),
+                      builder: (context) => SigninOtp(email: email),
                     ),
                   );
                 },
@@ -285,19 +243,22 @@ class _SigninState extends State<Signin> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Image.asset('assets/images/icons/apple.png'),
-                  ),
-                ),
-                SizedBox(width: size.width * 0.14),
-                CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Image.asset('assets/images/icons/google.png'),
+                GestureDetector(
+                  onTap: () async {
+                    final success = await _googleAuthService
+                        .signInAndAuthenticate();
+                    if (success) {
+                      print("Google login successful");
+                    } else {
+                      print("Google login failed");
+                    }
+                  },
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Image.asset('assets/images/icons/google.png'),
+                    ),
                   ),
                 ),
               ],
