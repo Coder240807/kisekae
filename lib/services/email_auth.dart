@@ -1,10 +1,30 @@
 import 'package:dio/dio.dart';
 import 'package:kisekae/services/token_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:kisekae/screens/getting_started.dart';
 
 class EmailAuth {
-  final dio = Dio(BaseOptions(baseUrl: dotenv.get('BASE_URL')));
+  final Dio dio;
   final TokenStorage _tokenStorage = TokenStorage();
+
+  EmailAuth() : dio = Dio(BaseOptions(baseUrl: dotenv.get('BASE_URL'))) {
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (DioException error, ErrorInterceptorHandler handler) async {
+          if (error.response?.statusCode == 401) {
+            print("Session Expired. Logging Out...");
+            await _tokenStorage.deleteAll();
+            redirect();
+            return handler.next(error);
+          }
+          if (error.response?.statusCode == 500) {
+            print("Server Error");
+          }
+          return handler.next(error);
+        },
+      ),
+    );
+  }
 
   Future<bool> signIn(String email, String password) async {
     try {
@@ -19,7 +39,7 @@ class EmailAuth {
         final String accessToken = data["tokens"]["access"];
         final String refreshToken = data["tokens"]["refresh"];
 
-        _tokenStorage.write(
+        await _tokenStorage.write(
           accessToken: accessToken,
           refreshToken: refreshToken,
         );
@@ -46,7 +66,7 @@ class EmailAuth {
         final String accessToken = data["tokens"]["access"];
         final String refreshToken = data["tokens"]["refresh"];
 
-        _tokenStorage.write(
+        await _tokenStorage.write(
           accessToken: accessToken,
           refreshToken: refreshToken,
         );
@@ -90,7 +110,7 @@ class EmailAuth {
         final String accessToken = data["tokens"]["access"];
         final String refreshToken = data["tokens"]["refresh"];
 
-        _tokenStorage.write(
+        await _tokenStorage.write(
           accessToken: accessToken,
           refreshToken: refreshToken,
         );
@@ -138,8 +158,19 @@ class EmailAuth {
       } else {
         print("Logout Error: ${response.statusCode} ${response.data}");
       }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        print(
+          "Logout failed on server because session was already expired (401). Local tokens cleared.",
+        );
+        return true;
+      } else {
+        print(
+          "Logout network error occurred: ${e.message} (Status Code: ${e.response?.statusCode})",
+        );
+      }
     } catch (e) {
-      print("Logout Error: $e");
+      print("Unexpected logout failure: $e");
     }
     return false;
   }
