@@ -1,16 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kisekae/services/token_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class GoogleAuthService {
-  final dio = Dio(BaseOptions(baseUrl: 'https://kisekae.live'));
+  final dio = Dio(BaseOptions(baseUrl: dotenv.get('BASE_URL')));
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final TokenStorage _tokenStorage = TokenStorage();
 
   Future<bool> signInAndAuthenticate() async {
     try {
       await _googleSignIn.initialize(
-        serverClientId: "1046679130755-h142ui92kmkr75eledgih1l62iippp8o.apps.googleusercontent.com",
+        serverClientId: dotenv.get('GOOGLE_CLIENT_ID'),
       );
       final GoogleSignInAccount account = await _googleSignIn.authenticate();
       final GoogleSignInAuthentication auth = account.authentication;

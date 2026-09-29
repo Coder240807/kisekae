@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/services/email_auth.dart';
 import 'package:kisekae/services/google_auth.dart';
 
@@ -37,6 +38,11 @@ class _CreateAccountState extends State<CreateAccount> {
             backgroundColor: Colors.green,
           ),
         );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -45,6 +51,31 @@ class _CreateAccountState extends State<CreateAccount> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _goauth() async {
+    final success = await _googleAuthService.signInAndAuthenticate();
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google OAuth success.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google OAuth failed'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -237,15 +268,7 @@ class _CreateAccountState extends State<CreateAccount> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-                        onTap: () async {
-                          final success = await _googleAuthService
-                              .signInAndAuthenticate();
-                          if (success) {
-                            print("Google login successful");
-                          } else {
-                            print("Google login failed");
-                          }
-                        },
+                        onTap: _goauth,
                         child: CircleAvatar(
                           backgroundColor: Colors.white,
                           child: Padding(

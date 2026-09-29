@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/services/email_auth.dart';
 import 'package:flutter/services.dart';
 
@@ -170,6 +171,11 @@ class _SigninOtpState extends State<SigninOtp> {
           content: Text('Signed in successfully!'),
           backgroundColor: Colors.green,
         ),
+      );
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

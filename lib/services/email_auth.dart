@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:kisekae/services/token_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class EmailAuth {
-  final dio = Dio(BaseOptions(baseUrl: 'https://kisekae.live'));
+  final dio = Dio(BaseOptions(baseUrl: dotenv.get('BASE_URL')));
   final TokenStorage _tokenStorage = TokenStorage();
 
   Future<bool> signIn(String email, String password) async {
@@ -117,6 +118,28 @@ class EmailAuth {
       }
     } catch (e) {
       print("Auth Error: $e");
+    }
+    return false;
+  }
+
+  Future<bool> logout() async {
+    try {
+      final accessToken = await _tokenStorage.readAccessToken();
+      final refreshToken = await _tokenStorage.readRefreshToken();
+      print("$accessToken, $refreshToken");
+      final response = await dio.post(
+        '/accounts/logout/',
+        data: {"refresh": refreshToken},
+        options: Options(headers: {"Authorization": "Bearer $accessToken"}),
+      );
+      if (response.statusCode == 200) {
+        await _tokenStorage.deleteAll();
+        return true;
+      } else {
+        print("Logout Error: ${response.statusCode} ${response.data}");
+      }
+    } catch (e) {
+      print("Logout Error: $e");
     }
     return false;
   }
