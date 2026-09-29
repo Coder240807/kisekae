@@ -21,6 +21,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
 
   bool _otpSent = false;
   bool _obscurePassword = true;
+  bool _sendingOtp = false;
+  bool _resetting = false;
+  bool get _loading => _sendingOtp || _resetting;
 
   @override
   void initState() {
@@ -76,32 +79,41 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   }
 
   Future<void> _handleSendOtp() async {
+    if (_loading) return;
     if (!_form.currentState!.validate()) return;
-    final email = _emailController.text.trim();
-    final success = await EmailAuth().sendOtp(email, purpose: "password_reset");
 
-    if (!mounted) return;
-    if (success) {
-      setState(() {
-        _otpSent = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password reset code sent to your email!'),
-          backgroundColor: Colors.green,
-        ),
+    setState(() => _sendingOtp = true);
+    try {
+      final email = _emailController.text.trim();
+      final success = await EmailAuth().sendOtp(
+        email,
+        purpose: "password_reset",
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to send reset code. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+
+      if (!mounted) return;
+      if (success) {
+        setState(() => _otpSent = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('If an account exists, a password reset code has been sent!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to send reset code. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sendingOtp = false);
     }
   }
 
   Future<void> _handleResetPassword() async {
+    if (_loading) return;
     final otpString = _otpControllers.map((c) => c.text.trim()).join();
     if (otpString.length != _otpLength) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -124,29 +136,34 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       return;
     }
     if (!_form.currentState!.validate()) return;
-    final success = await EmailAuth().resetPassword(
-      _emailController.text.trim(),
-      otp,
-      _passwordController.text,
-    );
-    if (!mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password reset successfully! Please sign in.'),
-          backgroundColor: Colors.green,
-        ),
+    setState(() => _resetting = true);
+    try {
+      final success = await EmailAuth().resetPassword(
+        _emailController.text.trim(),
+        otp,
+        _passwordController.text,
       );
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Failed to reset password. Please check your code and try again.',
+      if (!mounted) return;
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset successfully! Please sign in.'),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Colors.red,
-        ),
-      );
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Failed to reset password. Please check your code and try again.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _resetting = false);
     }
   }
 
@@ -162,7 +179,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
             Navigator.pop(context);
           },
           icon: Container(
-            padding: EdgeInsets.all(size.width * 0.04),
+            padding: EdgeInsets.all(size.width * 0.01),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.transparent,
@@ -349,16 +366,27 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 width: double.infinity,
                 height: size.height * 0.065,
                 child: FilledButton(
-                  onPressed: _otpSent ? _handleResetPassword : _handleSendOtp,
+                  onPressed: _loading
+                      ? null
+                      : (_otpSent ? _handleResetPassword : _handleSendOtp),
                   style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    _otpSent ? 'Reset Password' : 'Send code',
-                    style: TextStyle(fontSize: size.width * 0.04),
-                  ),
+                  child: _loading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _otpSent ? 'Reset Password' : 'Send code',
+                          style: TextStyle(fontSize: size.width * 0.04),
+                        ),
                 ),
               ),
               SizedBox(height: size.height * 0.02),
