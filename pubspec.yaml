@@ -37,6 +37,7 @@ dependencies:
   google_sign_in: ^7.2.0
   dio: ^5.11.1
   flutter_secure_storage: ^11.2.0
+  flutter_dotenv: ^6.0.1
   flutter_svg: ^2.3.0
 
 dev_dependencies:
@@ -60,6 +61,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
+    - .env
     - assets/images/pic1.svg
     - assets/icons/google.png
   # To add assets to your application, add an assets section, like this:
