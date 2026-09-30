@@ -197,11 +197,13 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: EdgeInsets.all(size.width * 0.04),
-          child: Form(
-            key: _form,
+        child: Form(
+          key: _form,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.065,
+              vertical: size.height * 0.01,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -240,17 +242,22 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     ),
                     SizedBox(height: size.height * 0.01),
                     SizedBox(
-                      height: size.height * 0.065,
                       child: TextFormField(
                         controller: _emailController,
                         readOnly: _otpSent,
+                        maxLength: 100,
+                        maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter your email';
                           }
+                          if (value.length >= 100) {
+                            return 'You have reached the maximum limit';
+                          }
                           final emailRegex = RegExp(
-                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
                           );
                           if (!emailRegex.hasMatch(value.trim())) {
                             return 'Enter a valid email address';
@@ -258,7 +265,12 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                           return null;
                         },
                         decoration: InputDecoration(
-                          hintText: "enter your email",
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: size.width * 0.04,
+                            vertical: size.height * 0.015,
+                          ),
+                          hintText: "Enter your email",
+                          counterText: '',
                           filled: true,
                           fillColor: _otpSent
                               ? colors.surfaceContainerHighest.withValues(
@@ -267,6 +279,38 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               : colors.surfaceContainerHighest,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
                           ),
                         ),
                       ),
@@ -290,7 +334,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         child: TextField(
                           controller: _otpControllers[index],
                           focusNode: _otpFocusNodes[index],
-                          maxLength: 1,
                           autofocus: index == 0,
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
@@ -343,7 +386,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                           return null;
                         },
                         decoration: InputDecoration(
-                          hintText: "enter your new password",
+                          hintText: "Enter your new password",
                           filled: true,
                           fillColor: colors.surfaceContainerHighest,
                           border: OutlineInputBorder(

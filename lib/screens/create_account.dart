@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/services/email_auth.dart';
 import 'package:kisekae/services/google_auth.dart';
@@ -130,7 +131,7 @@ class _CreateAccountState extends State<CreateAccount> {
                 children: [
                   Center(
                     child: Text(
-                      'enter your details',
+                      'Enter your details',
 
                       style: TextStyle(fontSize: size.width * 0.04),
                     ),
@@ -139,11 +140,22 @@ class _CreateAccountState extends State<CreateAccount> {
 
                   _inputField(
                     label: 'Full Name',
-                    hintText: 'enter your name',
+                    hintText: 'Enter your name',
                     controller: _nameController,
+                    maxLength: 150,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Please enter your full name';
+                      }
+                      if (value.trim().length < 2) {
+                        return 'Name must be at least 2 characters long';
+                      }
+                      if (value.length >= 150) {
+                        return 'You have reached the maximum limit';
+                      }
+                      final nameRegex = RegExp(r'^[A-Za-z\s\.\ -]{2,150}$');
+                      if (!nameRegex.hasMatch(value)) {
+                        return 'Enter a valid name';
                       }
                       return null;
                     },
@@ -152,16 +164,21 @@ class _CreateAccountState extends State<CreateAccount> {
 
                   _inputField(
                     label: 'Email',
-                    hintText: 'enter your email',
+                    hintText: 'Enter your email',
                     controller: _emailController,
+                    maxLength: 100,
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Please enter your email';
                       }
+                      if (value.length >= 100) {
+                        return 'You have reached the maximum limit';
+                      }
                       final emailRegex = RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
                       );
+
                       if (!emailRegex.hasMatch(value)) {
                         return 'Enter a valid email address';
                       }
@@ -173,9 +190,10 @@ class _CreateAccountState extends State<CreateAccount> {
 
                   _inputField(
                     label: 'Password',
-                    hintText: 'enter your password',
+                    hintText: 'Enter your password',
                     controller: _passwordController,
                     obscureText: _obscurePassword,
+                    maxLength: 128,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -197,6 +215,15 @@ class _CreateAccountState extends State<CreateAccount> {
                       if (value.length < 8) {
                         return 'Password must be at least 8 characters';
                       }
+                      if (value.length >= 128) {
+                        return 'You have reached the maximum limit';
+                      }
+                      final passwordRegex = RegExp(
+                        r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,128}$',
+                      );
+                      if (!passwordRegex.hasMatch(value)) {
+                        return 'Password must include a letter, a number, and a special character';
+                      }
                       return null;
                     },
                   ),
@@ -205,9 +232,10 @@ class _CreateAccountState extends State<CreateAccount> {
 
                   _inputField(
                     label: 'Confirm password',
-                    hintText: 'confirm your password',
+                    hintText: 'Confirm your password',
                     controller: _confirmPasswordController,
                     obscureText: true,
+                    maxLength: 128,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please confirm your password';
@@ -291,12 +319,13 @@ class _CreateAccountState extends State<CreateAccount> {
     required String hintText,
     required TextEditingController controller,
     FormFieldValidator<String>? validator,
+    int? maxLength,
     bool obscureText = false,
     Widget? suffixIcon,
     TextInputType? keyboardType,
   }) {
     final simpleBlackBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(16),
       borderSide: const BorderSide(color: Colors.black, width: 1),
     );
     final size = MediaQuery.of(context).size;
@@ -316,8 +345,12 @@ class _CreateAccountState extends State<CreateAccount> {
           obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          maxLength: maxLength,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
           decoration: InputDecoration(
             hintText: hintText,
+            counterText: '',
             hintStyle: TextStyle(fontSize: size.width * 0.04),
             contentPadding: EdgeInsets.symmetric(
               horizontal: size.width * 0.04,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kisekae/screens/forgot_password.dart';
 import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/screens/signin_otp.dart';
@@ -120,15 +121,19 @@ class _SigninState extends State<Signin> {
                 children: [
                   _TextInput(
                     label: 'Email',
-                    hint: 'enter your email',
+                    hint: 'Enter your email',
+                    maxLength: 100,
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Please enter your email';
                       }
+                      if (value.length >= 100) {
+                        return 'You have reached the maximum limit';
+                      }
                       final emailRegex = RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
                       );
                       if (!emailRegex.hasMatch(value)) {
                         return 'Enter a valid email address';
@@ -139,9 +144,10 @@ class _SigninState extends State<Signin> {
                   SizedBox(height: 16),
                   _TextInput(
                     label: 'Password',
-                    hint: 'enter your password',
+                    hint: 'Enter your password',
                     controller: _passwordController,
                     obscureText: _obscurePassword,
+                    maxLength: 128,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -162,6 +168,15 @@ class _SigninState extends State<Signin> {
                       }
                       if (value.length < 8) {
                         return 'Password must be at least 8 characters';
+                      }
+                      if (value.length >= 128) {
+                        return 'You have reached the maximum limit';
+                      }
+                      final passwordRegex = RegExp(
+                        r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,128}$',
+                      );
+                      if (!passwordRegex.hasMatch(value)) {
+                        return 'Password must include a letter, a number, and a special character';
                       }
                       return null;
                     },
@@ -226,7 +241,7 @@ class _SigninState extends State<Signin> {
                 onPressed: () {
                   final email = _emailController.text.trim();
                   final emailRegex = RegExp(
-                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
                   );
                   if (!emailRegex.hasMatch(email)) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -251,7 +266,7 @@ class _SigninState extends State<Signin> {
                   ),
                 ),
                 child: Text(
-                  'sign in with otp instead',
+                  'Sign in with otp instead',
                   style: TextStyle(fontSize: size.width * 0.04),
                 ),
               ),
@@ -297,6 +312,7 @@ class _TextInput extends StatelessWidget {
   final String hint;
   final TextEditingController controller;
   final FormFieldValidator<String>? validator;
+  final int? maxLength;
   final bool obscureText;
   final Widget? suffixIcon;
   final TextInputType? keyboardType;
@@ -306,6 +322,7 @@ class _TextInput extends StatelessWidget {
     required this.hint,
     required this.controller,
     this.validator,
+    this.maxLength,
     this.obscureText = false,
     this.suffixIcon,
     this.keyboardType,
@@ -315,6 +332,10 @@ class _TextInput extends StatelessWidget {
   Widget build(BuildContext context) {
     ColorScheme colors = Theme.of(context).colorScheme;
     final size = MediaQuery.of(context).size;
+    final simpleBlackBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(15),
+      borderSide: const BorderSide(color: Colors.black, width: 1),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,11 +346,19 @@ class _TextInput extends StatelessWidget {
           obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          maxLength: maxLength,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
           decoration: InputDecoration(
             hintText: hint,
+            counterText: '',
             filled: true,
             fillColor: colors.surfaceContainerHighest,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            border: simpleBlackBorder,
+            enabledBorder: simpleBlackBorder,
+            focusedBorder: simpleBlackBorder,
+            errorBorder: simpleBlackBorder,
+            focusedErrorBorder: simpleBlackBorder,
             suffixIcon: suffixIcon,
           ),
         ),

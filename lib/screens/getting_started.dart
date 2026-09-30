@@ -6,7 +6,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void redirect() {
-  navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+  navigatorKey.currentState?.pushNamedAndRemoveUntil(
+    '/login',
+    (route) => false,
+  );
 }
 
 class GettingStartedScreen extends StatelessWidget {
@@ -49,10 +52,10 @@ class GettingStartedScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                SizedBox(height: size.height * 0.04),
 
                 Text(
-                  'sign in to your account or create a account',
+                  'Sign in to your account or create a account',
                   style: TextStyle(fontSize: size.width * 0.04),
                   textAlign: TextAlign.center,
                 ),
@@ -76,7 +79,7 @@ class GettingStartedScreen extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    'sign in',
+                    'Sign In',
                     style: TextStyle(
                       fontSize: size.width * 0.04,
                       fontWeight: FontWeight.w500,
@@ -84,7 +87,7 @@ class GettingStartedScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 15),
+                SizedBox(height: size.height * 0.02),
 
                 OutlinedButton(
                   onPressed: () {
@@ -98,16 +101,13 @@ class GettingStartedScreen extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF8B2E3E),
                     minimumSize: Size(double.infinity, size.height * 0.065),
-                    side: const BorderSide(
-                      color: Color(0xFF8B2E3E),
-                      width: 1.2,
-                    ),
+                    side: const BorderSide(color: Color(0xFF8B2E3E), width: 1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: Text(
-                    'Create Account',
+                    'Create An Account',
                     style: TextStyle(
                       fontSize: size.width * 0.04,
                       fontWeight: FontWeight.w500,
