@@ -95,7 +95,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         setState(() => _otpSent = true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('If an account exists, a password reset code has been sent!'),
+            content: Text(
+              'If an account exists, a password reset code has been sent!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -194,203 +196,252 @@ class _ForgotPasswordState extends State<ForgotPassword> {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      body: Container(
-        padding: EdgeInsets.all(size.width * 0.04),
+      body: SafeArea(
         child: Form(
           key: _form,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _otpSent
-                    ? 'We have sent a 6 digit code to ${_emailController.text.trim()}'
-                    : 'Enter your email address and we will send you a reset code',
-                style: TextStyle(fontSize: size.width * 0.045),
-              ),
-              const SizedBox(height: 24),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Email",
-                        style: TextStyle(fontSize: size.width * 0.04),
-                      ),
-                      if (_otpSent)
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _otpSent = false;
-                            });
-                          },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            minimumSize: const Size(50, 30),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text('Change email'),
-                        ),
-                    ],
-                  ),
-                  SizedBox(height: size.height * 0.01),
-                  SizedBox(
-                    height: size.height * 0.065,
-                    child: TextFormField(
-                      controller: _emailController,
-                      readOnly: _otpSent,
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        final emailRegex = RegExp(
-                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                        );
-                        if (!emailRegex.hasMatch(value.trim())) {
-                          return 'Enter a valid email address';
-                        }
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        hintText: "enter your email",
-                        filled: true,
-                        fillColor: _otpSent
-                            ? colors.surfaceContainerHighest.withValues(
-                                alpha: 0.5,
-                              )
-                            : colors.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (_otpSent) ...[
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.065,
+              vertical: size.height * 0.01,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _otpSent
+                      ? 'We have sent a 6 digit code to ${_emailController.text.trim()}'
+                      : 'Enter your email address and we will send you a reset code',
+                  style: TextStyle(fontSize: size.width * 0.045),
+                ),
                 const SizedBox(height: 24),
-                const Text(
-                  "Enter 6-digit code",
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(
-                    _otpLength,
-                    (index) => SizedBox(
-                      height: size.height * 0.08,
-                      width: size.width * 0.125,
-                      child: TextField(
-                        controller: _otpControllers[index],
-                        focusNode: _otpFocusNodes[index],
-                        maxLength: 1,
-                        autofocus: index == 0,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        onChanged: (value) => _onOtpChanged(value, index),
-                        decoration: InputDecoration(
-                          counterText: "",
-                          filled: true,
-                          fillColor: colors.surfaceContainerHighest,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: _handleSendOtp,
-                    child: const Text('Resend code'),
-                  ),
-                ),
-                const SizedBox(height: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("New Password", style: TextStyle(fontSize: 16)),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a new password';
-                        }
-                        if (value.length < 8) {
-                          return 'Password must be at least 8 characters';
-                        }
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        hintText: "enter your new password",
-                        filled: true,
-                        fillColor: colors.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Email",
+                          style: TextStyle(fontSize: size.width * 0.04),
                         ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: Colors.black,
-                            size: 20,
+                        if (_otpSent)
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _otpSent = false;
+                              });
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: const Size(50, 30),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('Change email'),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
+                      ],
+                    ),
+                    SizedBox(height: size.height * 0.01),
+                    SizedBox(
+                      child: TextFormField(
+                        controller: _emailController,
+                        readOnly: _otpSent,
+                        maxLength: 100,
+                        maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (value.length >= 100) {
+                            return 'You have reached the maximum limit';
+                          }
+                          final emailRegex = RegExp(
+                            r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
+                          );
+                          if (!emailRegex.hasMatch(value.trim())) {
+                            return 'Enter a valid email address';
+                          }
+                          return null;
+                        },
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: size.width * 0.04,
+                            vertical: size.height * 0.015,
+                          ),
+                          hintText: "Enter your email",
+                          counterText: '',
+                          filled: true,
+                          fillColor: _otpSent
+                              ? colors.surfaceContainerHighest.withValues(
+                                  alpha: 0.5,
+                                )
+                              : colors.surfaceContainerHighest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ],
-              SizedBox(height: size.height * 0.08),
-              SizedBox(
-                width: double.infinity,
-                height: size.height * 0.065,
-                child: FilledButton(
-                  onPressed: _loading
-                      ? null
-                      : (_otpSent ? _handleResetPassword : _handleSendOtp),
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                if (_otpSent) ...[
+                  const SizedBox(height: 24),
+                  const Text(
+                    "Enter 6-digit code",
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(
+                      _otpLength,
+                      (index) => SizedBox(
+                        height: size.height * 0.08,
+                        width: size.width * 0.125,
+                        child: TextField(
+                          controller: _otpControllers[index],
+                          focusNode: _otpFocusNodes[index],
+                          autofocus: index == 0,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          onChanged: (value) => _onOtpChanged(value, index),
+                          decoration: InputDecoration(
+                            counterText: "",
+                            filled: true,
+                            fillColor: colors.surfaceContainerHighest,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  child: _loading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _handleSendOtp,
+                      child: const Text('Resend code'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "New Password",
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a new password';
+                          }
+                          if (value.length < 8) {
+                            return 'Password must be at least 8 characters';
+                          }
+                          return null;
+                        },
+                        decoration: InputDecoration(
+                          hintText: "Enter your new password",
+                          filled: true,
+                          fillColor: colors.surfaceContainerHighest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                        )
-                      : Text(
-                          _otpSent ? 'Reset Password' : 'Send code',
-                          style: TextStyle(fontSize: size.width * 0.04),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: Colors.black,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
+                      ),
+                    ],
+                  ),
+                ],
+                SizedBox(height: size.height * 0.08),
+                SizedBox(
+                  width: double.infinity,
+                  height: size.height * 0.065,
+                  child: FilledButton(
+                    onPressed: _loading
+                        ? null
+                        : (_otpSent ? _handleResetPassword : _handleSendOtp),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            _otpSent ? 'Reset Password' : 'Send code',
+                            style: TextStyle(fontSize: size.width * 0.04),
+                          ),
+                  ),
                 ),
-              ),
-              SizedBox(height: size.height * 0.02),
-            ],
+                SizedBox(height: size.height * 0.02),
+              ],
+            ),
           ),
         ),
       ),

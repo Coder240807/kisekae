@@ -16,6 +16,8 @@ class _SigninOtpState extends State<SigninOtp> {
   late final List<FocusNode> _focusNodes;
   late final List<TextEditingController> _controllers;
 
+  bool _hasError = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +41,11 @@ class _SigninOtpState extends State<SigninOtp> {
   }
 
   void _onChanged(String value, int index) {
+    if (_hasError) {
+      setState(() {
+        _hasError = false;
+      });
+    }
     if (value.length > 1) {
       String digitsOnly = value.replaceAll(RegExp(r'\D'), '');
       for (int i = 0; i < _otpLength; i++) {
@@ -113,7 +120,6 @@ class _SigninOtpState extends State<SigninOtp> {
                   child: TextField(
                     controller: _controllers[index],
                     focusNode: _focusNodes[index],
-                    maxLength: 1,
                     autofocus: index == 0,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
@@ -127,8 +133,41 @@ class _SigninOtpState extends State<SigninOtp> {
                       counterText: "",
                       filled: true,
                       fillColor: colors.surfaceContainerHighest,
+                      errorText: _hasError ? "Incorrect OTP enter again" : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.black,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.black,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.black,
+                          width: 1,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1,
+                        ),
                       ),
                     ),
                   ),
@@ -162,7 +201,10 @@ class _SigninOtpState extends State<SigninOtp> {
 
   Future<void> verifyOtp() async {
     final otp = int.tryParse(_controllers.map((c) => c.text).join());
-    if (otp == null) return;
+    if (otp == null) {
+      setState(() => _hasError = true);
+      return;
+    }
     final success = await EmailAuth().verifyOtp(widget.email, otp);
     if (!mounted) return;
     if (success) {
@@ -178,6 +220,9 @@ class _SigninOtpState extends State<SigninOtp> {
         (route) => false,
       );
     } else {
+      setState(() {
+        _hasError = true;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to sign in'),
