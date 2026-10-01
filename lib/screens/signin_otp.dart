@@ -97,7 +97,7 @@ class _SigninOtpState extends State<SigninOtp> {
         ),
         centerTitle: true,
         title: Text(
-          "Sign in using OTP",
+          "OTP Verification",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),

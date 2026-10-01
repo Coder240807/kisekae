@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kisekae/screens/new_password.dart';
 
-class VerifyEmail extends StatefulWidget {
-  const VerifyEmail({super.key});
+class PasswordOTP extends StatefulWidget {
+  final String email;
+  const PasswordOTP({super.key, required this.email});
 
   @override
-  State<VerifyEmail> createState() => _VerifyEmailState();
+  State<PasswordOTP> createState() => _PasswordOTPState();
 }
 
-class _VerifyEmailState extends State<VerifyEmail> {
+class _PasswordOTPState extends State<PasswordOTP> {
   final int _otpLength = 6;
   late final List<FocusNode> _focusNodes;
   late final List<TextEditingController> _controllers;
+
+  bool _hasError = false;
+  bool _resending = false;
+
+  String get _code => _controllers.map((c) => c.text.trim()).join();
 
   @override
   void initState() {
@@ -35,6 +42,7 @@ class _VerifyEmailState extends State<VerifyEmail> {
   }
 
   void _onChanged(String value, int index) {
+    if (_hasError) setState(() => _hasError = false);
     if (value.length > 1) {
       String digitsOnly = value.replaceAll(RegExp(r'\D'), '');
       for (int i = 0; i < _otpLength; i++) {
@@ -63,6 +71,19 @@ class _VerifyEmailState extends State<VerifyEmail> {
     }
   }
 
+  void _onVerify() {
+    if (_code.length != _otpLength) {
+      setState(() => _hasError = true);
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewPasswordScreen(email: widget.email, code: _code),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ColorScheme colors = Theme.of(context).colorScheme;
@@ -86,7 +107,7 @@ class _VerifyEmailState extends State<VerifyEmail> {
         ),
         centerTitle: true,
         title: const Text(
-          "Verify your email",
+          "OTP Verification",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
@@ -95,7 +116,7 @@ class _VerifyEmailState extends State<VerifyEmail> {
         child: Column(
           children: [
             Text(
-              'We have sent a 6 digit code to name@example.com',
+              'We have sent a 6 digit code to ${widget.email}',
               style: TextStyle(fontSize: size.width * 0.045),
             ),
             SizedBox(height: size.height * 0.02),
@@ -130,12 +151,22 @@ class _VerifyEmailState extends State<VerifyEmail> {
                 ),
               ),
             ),
+            if (_hasError)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  "Please enter the full 6-digit code",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.red, fontSize: 14),
+                ),
+              ),
             const SizedBox(height: 96),
             SizedBox(
               width: double.infinity,
               height: 48,
               child: FilledButton(
-                onPressed: () {},
+                onPressed: _onVerify,
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/screens/password_otp.dart';
 
 class ForgotPassword extends StatefulWidget {
   final String email;
@@ -85,7 +86,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   }
 
   Future<void> _handleSendOtp() async {
-    if (_loading) return;
+    if (_sendingOtp) return;
     if (!_form.currentState!.validate()) return;
 
     setState(() => _sendingOtp = true);
@@ -98,14 +99,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
 
       if (!mounted) return;
       if (success) {
-        setState(() => _otpSent = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'If an account exists, a password reset code has been sent!',
-            ),
-            backgroundColor: Colors.green,
-          ),
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PasswordOTP(email: email)),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -224,9 +220,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _otpSent
-                      ? 'We have sent a 6 digit code to ${_emailController.text.trim()}'
-                      : 'Enter your email address and we will send you a reset code',
+                  'Enter your email address and we will send you a reset code',
                   style: TextStyle(fontSize: size.width * 0.045),
                 ),
                 const SizedBox(height: 24),
@@ -240,7 +234,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                           "Email",
                           style: TextStyle(fontSize: size.width * 0.04),
                         ),
-                        if (_otpSent)
+                        /*if (_otpSent)
                           TextButton(
                             onPressed: () {
                               setState(() {
@@ -253,7 +247,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: const Text('Change email'),
-                          ),
+                          ),*/
                       ],
                     ),
                     SizedBox(height: size.height * 0.01),
@@ -309,7 +303,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     ),
                   ],
                 ),
-                if (_otpSent) ...[
+                /*if (_otpSent) ...[
                   const SizedBox(height: 24),
                   const Text(
                     "Enter 6-digit code",
@@ -442,21 +436,19 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                       ),
                     ],
                   ),
-                ],
+                ],*/
                 SizedBox(height: size.height * 0.08),
                 SizedBox(
                   width: double.infinity,
                   height: size.height * 0.065,
                   child: FilledButton(
-                    onPressed: _loading
-                        ? null
-                        : (_otpSent ? _handleResetPassword : _handleSendOtp),
+                    onPressed: _otpSent ? null : _handleSendOtp,
                     style: FilledButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: _loading
+                    child: _otpSent
                         ? const SizedBox(
                             height: 22,
                             width: 22,
@@ -465,13 +457,12 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               color: Colors.white,
                             ),
                           )
-                        : Text(
-                            _otpSent ? 'Reset Password' : 'Send code',
-                            style: TextStyle(fontSize: size.width * 0.04),
+                        : const Text(
+                            'Send code',
+                            style: TextStyle(fontSize: 16),
                           ),
                   ),
                 ),
-                SizedBox(height: size.height * 0.02),
               ],
             ),
           ),
