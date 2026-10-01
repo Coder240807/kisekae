@@ -133,7 +133,7 @@ class _SigninOtpState extends State<SigninOtp> {
                       counterText: "",
                       filled: true,
                       fillColor: colors.surfaceContainerHighest,
-                      errorText: _hasError ? "Incorrect OTP enter again" : null,
+
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: const BorderSide(
@@ -143,30 +143,16 @@ class _SigninOtpState extends State<SigninOtp> {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: Colors.black,
-                          width: 1,
+                        borderSide: BorderSide(
+                          color: _hasError ? Colors.red : Colors.black,
+                          width: 1.5,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: Colors.black,
-                          width: 1,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
+                        borderSide: BorderSide(
+                          color: _hasError ? Colors.red : Colors.black,
+                          width: 1.5,
                         ),
                       ),
                     ),
@@ -174,6 +160,19 @@ class _SigninOtpState extends State<SigninOtp> {
                 ),
               ),
             ),
+            if (_hasError)
+              Padding(
+                padding: EdgeInsets.only(top: size.height * 0.012),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Incorrect OTP, enter again",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.red, fontSize: 14),
+                  ),
+                ),
+              ),
             SizedBox(height: 96),
             SizedBox(
               width: double.infinity,
