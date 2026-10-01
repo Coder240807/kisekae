@@ -4,17 +4,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kisekae/screens/getting_started.dart';
 
 class EmailAuth {
-  final Dio dio;
-  final TokenStorage _tokenStorage = TokenStorage();
-
-  EmailAuth() : dio = Dio(BaseOptions(baseUrl: dotenv.get('BASE_URL'))) {
-    dio.interceptors.add(
+  final Dio dio = Dio(BaseOptions(baseUrl: dotenv.get('BASE_URL')))
+    ..interceptors.add(
       InterceptorsWrapper(
         onError: (DioException error, ErrorInterceptorHandler handler) async {
           if (error.response?.statusCode == 401) {
             print("Session Expired. Logging Out...");
-            await _tokenStorage.deleteAll();
-            redirect();
+            await TokenStorage().deleteAll();
             return handler.next(error);
           }
           if (error.response?.statusCode == 500) {
@@ -24,7 +20,8 @@ class EmailAuth {
         },
       ),
     );
-  }
+
+  final TokenStorage _tokenStorage = TokenStorage();
 
   Future<bool> signIn(String email, String password) async {
     try {
