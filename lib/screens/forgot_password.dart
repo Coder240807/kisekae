@@ -23,6 +23,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   bool _obscurePassword = true;
   bool _sendingOtp = false;
   bool _resetting = false;
+  bool _hasError = false;
   bool get _loading => _sendingOtp || _resetting;
 
   @override
@@ -50,6 +51,11 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   }
 
   void _onOtpChanged(String value, int index) {
+    if (_hasError) {
+      setState(() {
+        _hasError = false;
+      });
+    }
     if (value.length > 1) {
       String digitsOnly = value.replaceAll(RegExp(r'\D'), '');
       for (int i = 0; i < _otpLength; i++) {
@@ -118,6 +124,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     if (_loading) return;
     final otpString = _otpControllers.map((c) => c.text.trim()).join();
     if (otpString.length != _otpLength) {
+      setState(() => _hasError = true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter the full 6-digit code'),
@@ -138,7 +145,11 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       return;
     }
     if (!_form.currentState!.validate()) return;
-    setState(() => _resetting = true);
+    setState(() {
+      _hasError = false;
+      _resetting = true;
+    });
+
     try {
       final success = await EmailAuth().resetPassword(
         _emailController.text.trim(),
@@ -155,6 +166,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         );
         Navigator.pop(context);
       } else {
+        setState(() => _hasError = true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -173,6 +185,10 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   Widget build(BuildContext context) {
     ColorScheme colors = Theme.of(context).colorScheme;
     final size = MediaQuery.of(context).size;
+    final simpleBlackBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: Colors.black, width: 1),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -284,34 +300,10 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               width: 1,
                             ),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Colors.black,
-                              width: 1,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Colors.black,
-                              width: 1,
-                            ),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Colors.black,
-                              width: 1,
-                            ),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Colors.black,
-                              width: 1,
-                            ),
-                          ),
+                          enabledBorder: simpleBlackBorder,
+                          focusedBorder: simpleBlackBorder,
+                          errorBorder: simpleBlackBorder,
+                          focusedErrorBorder: simpleBlackBorder,
                         ),
                       ),
                     ),
@@ -351,12 +343,40 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             fillColor: colors.surfaceContainerHighest,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: Colors.black,
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: _hasError ? Colors.red : Colors.black,
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: _hasError ? Colors.red : Colors.black,
+                                width: 1.5,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                  if (_hasError)
+                    Padding(
+                      padding: EdgeInsets.only(top: size.height * 0.012),
+                      child: const Text(
+                        "Incorrect OTP, enter again",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.red, fontSize: 14),
+                      ),
+                    ),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -376,6 +396,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        maxLength: 128,
+
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter a new password';
@@ -383,10 +405,20 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                           if (value.length < 8) {
                             return 'Password must be at least 8 characters';
                           }
+                          if (value.length >= 128) {
+                            return 'You have reached the maximum limit';
+                          }
+                          final passwordRegex = RegExp(
+                            r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,128}$',
+                          );
+                          if (!passwordRegex.hasMatch(value)) {
+                            return 'Password must include a letter, a number, and a special character';
+                          }
                           return null;
                         },
                         decoration: InputDecoration(
                           hintText: "Enter your new password",
+                          counterText: '',
                           filled: true,
                           fillColor: colors.surfaceContainerHighest,
                           border: OutlineInputBorder(

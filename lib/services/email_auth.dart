@@ -118,6 +118,10 @@ class EmailAuth {
       } else {
         print("Auth Error: ${response.statusCode} ${response.data}");
       }
+    } on DioException catch (e) {
+      print("verifyOtp status: ${e.response?.statusCode}");
+      print("verifyOtp body: ${e.response?.data}");
+      print("verifyOtp sent: ${e.requestOptions.data}");
     } catch (e) {
       print("Auth Error: $e");
     }
