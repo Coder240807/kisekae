@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/services/email_auth.dart';
-import 'package:flutter/services.dart';
 
 class SigninOtp extends StatefulWidget {
   final String email;
@@ -12,18 +12,30 @@ class SigninOtp extends StatefulWidget {
 }
 
 class _SigninOtpState extends State<SigninOtp> {
+  final _form = GlobalKey<FormState>();
+  late final TextEditingController _emailController;
+
+  bool _sendingOtp = false;
+
+  // OTP step state
+  bool _otpSent = false;
+  late String _confirmedEmail;
+
   final int _otpLength = 6;
   late final List<FocusNode> _focusNodes;
-  late final List<TextEditingController> _controllers;
+  late final List<TextEditingController> _otpControllers;
 
   bool _hasError = false;
+  bool _verifying = false;
+  bool _resending = false;
 
   @override
   void initState() {
     super.initState();
-    sendOtp();
+    _emailController = TextEditingController(text: widget.email);
+    _confirmedEmail = '';
     _focusNodes = List.generate(_otpLength, (index) => FocusNode());
-    _controllers = List.generate(
+    _otpControllers = List.generate(
       _otpLength,
       (index) => TextEditingController(),
     );
@@ -31,7 +43,8 @@ class _SigninOtpState extends State<SigninOtp> {
 
   @override
   void dispose() {
-    for (var controller in _controllers) {
+    _emailController.dispose();
+    for (var controller in _otpControllers) {
       controller.dispose();
     }
     for (var node in _focusNodes) {
@@ -40,17 +53,42 @@ class _SigninOtpState extends State<SigninOtp> {
     super.dispose();
   }
 
-  void _onChanged(String value, int index) {
-    if (_hasError) {
-      setState(() {
-        _hasError = false;
-      });
+  Future<void> _handleSendOtp() async {
+    if (_sendingOtp) return;
+    if (!_form.currentState!.validate()) return;
+
+    setState(() => _sendingOtp = true);
+    try {
+      final email = _emailController.text.trim();
+      final response = await EmailAuth().sendOtp(email);
+
+      if (!mounted) return;
+      if (response.success) {
+        setState(() {
+          _confirmedEmail = email;
+          _otpSent = true;
+        });
+      }
+      if (response.message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sendingOtp = false);
     }
+  }
+
+  void _onOtpChanged(String value, int index) {
+    if (_hasError) setState(() => _hasError = false);
     if (value.length > 1) {
       String digitsOnly = value.replaceAll(RegExp(r'\D'), '');
       for (int i = 0; i < _otpLength; i++) {
         if (i < digitsOnly.length) {
-          _controllers[i].text = digitsOnly[i];
+          _otpControllers[i].text = digitsOnly[i];
         }
       }
       if (digitsOnly.length >= _otpLength) {
@@ -74,8 +112,210 @@ class _SigninOtpState extends State<SigninOtp> {
     }
   }
 
+  Future<void> _verifyOtp() async {
+    if (_verifying || _resending) return;
+    final otp = int.tryParse(_otpControllers.map((c) => c.text).join());
+    if (otp == null) {
+      setState(() => _hasError = true);
+      return;
+    }
+    setState(() => _verifying = true);
+    try {
+      final response = await EmailAuth().verifyOtp(
+        _confirmedEmail,
+        otp,
+        purpose: "login",
+      );
+      if (!mounted) return;
+      if (response.success) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      } else {
+        setState(() {
+          _hasError = true;
+        });
+      }
+      if (response.message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _verifying = false);
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    if (_resending || _verifying) return;
+    setState(() => _resending = true);
+    try {
+      final response = await EmailAuth().sendOtp(_confirmedEmail);
+      if (!mounted) return;
+      if (response.message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    return _otpSent ? _buildOtpStep() : _buildEmailStep();
+  }
+
+  Widget _buildEmailStep() {
+    ColorScheme colors = Theme.of(context).colorScheme;
+    final size = MediaQuery.of(context).size;
+    final simpleBlackBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: Colors.black, width: 1),
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Container(
+            padding: EdgeInsets.all(size.width * 0.01),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.transparent,
+              border: Border.all(color: Colors.black, width: 2),
+            ),
+            child: const Icon(Icons.arrow_back_ios_new, size: 18),
+          ),
+        ),
+        centerTitle: true,
+        title: const Text(
+          "Sign in with OTP",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+      body: SafeArea(
+        child: Form(
+          key: _form,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.065,
+              vertical: size.height * 0.01,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Enter your email address and we will send you a sign in code',
+                  style: TextStyle(fontSize: size.width * 0.045),
+                ),
+                const SizedBox(height: 24),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Email",
+                          style: TextStyle(fontSize: size.width * 0.04),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: size.height * 0.01),
+                    SizedBox(
+                      child: TextFormField(
+                        controller: _emailController,
+                        maxLength: 100,
+                        maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (value.length >= 100) {
+                            return 'You have reached the maximum limit';
+                          }
+                          final emailRegex = RegExp(
+                            r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
+                          );
+                          if (!emailRegex.hasMatch(value.trim())) {
+                            return 'Enter a valid email address';
+                          }
+                          return null;
+                        },
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: size.width * 0.04,
+                            vertical: size.height * 0.015,
+                          ),
+                          hintText: "Enter your email",
+                          counterText: '',
+                          filled: true,
+                          fillColor: colors.surfaceContainerHighest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: simpleBlackBorder,
+                          focusedBorder: simpleBlackBorder,
+                          errorBorder: simpleBlackBorder,
+                          focusedErrorBorder: simpleBlackBorder,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: size.height * 0.08),
+                SizedBox(
+                  width: double.infinity,
+                  height: size.height * 0.065,
+                  child: FilledButton(
+                    onPressed: _sendingOtp ? null : _handleSendOtp,
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _sendingOtp
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Send code',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOtpStep() {
     ColorScheme colors = Theme.of(context).colorScheme;
     final size = MediaQuery.of(context).size;
 
@@ -83,7 +323,13 @@ class _SigninOtpState extends State<SigninOtp> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            Navigator.pop(context);
+            setState(() {
+              _otpSent = false;
+              _hasError = false;
+              for (var c in _otpControllers) {
+                c.clear();
+              }
+            });
           },
           icon: Container(
             padding: const EdgeInsets.all(4),
@@ -106,7 +352,7 @@ class _SigninOtpState extends State<SigninOtp> {
         child: Column(
           children: [
             Text(
-              'We have sent a 6 digit code to ${widget.email}',
+              'We have sent a 6 digit code to $_confirmedEmail',
               style: TextStyle(fontSize: size.width * 0.045),
             ),
             SizedBox(height: size.height * 0.02),
@@ -118,7 +364,7 @@ class _SigninOtpState extends State<SigninOtp> {
                   height: size.height * 0.09,
                   width: size.width * 0.125,
                   child: TextField(
-                    controller: _controllers[index],
+                    controller: _otpControllers[index],
                     focusNode: _focusNodes[index],
                     autofocus: index == 0,
                     keyboardType: TextInputType.number,
@@ -128,12 +374,11 @@ class _SigninOtpState extends State<SigninOtp> {
                       fontWeight: FontWeight.bold,
                     ),
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onChanged: (value) => _onChanged(value, index),
+                    onChanged: (value) => _onOtpChanged(value, index),
                     decoration: InputDecoration(
                       counterText: "",
                       filled: true,
                       fillColor: colors.surfaceContainerHighest,
-
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: const BorderSide(
@@ -178,56 +423,49 @@ class _SigninOtpState extends State<SigninOtp> {
               width: double.infinity,
               height: 48,
               child: FilledButton(
-                onPressed: verifyOtp,
+                onPressed: (_verifying || _resending) ? null : _verifyOtp,
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Sign In'),
+                child: _verifying
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Sign In'),
               ),
             ),
             SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Didn't receive the code? ",
+                  style: TextStyle(fontSize: size.width * 0.037),
+                ),
+                GestureDetector(
+                  onTap: (_resending || _verifying) ? null : _resendOtp,
+                  child: Text(
+                    _resending ? 'Resending...' : 'Resend Code',
+                    style: TextStyle(
+                      fontSize: size.width * 0.037,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF8B2E3E),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> sendOtp() async {
-    await EmailAuth().sendOtp(widget.email);
-  }
-
-  Future<void> verifyOtp() async {
-    final otp = int.tryParse(_controllers.map((c) => c.text).join());
-    if (otp == null) {
-      setState(() => _hasError = true);
-      return;
-    }
-    final success = await EmailAuth().verifyOtp(widget.email, otp);
-    if (!mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Signed in successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
-    } else {
-      setState(() {
-        _hasError = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to sign in'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 }

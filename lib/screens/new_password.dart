@@ -3,9 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:kisekae/services/email_auth.dart';
 
 class NewPasswordScreen extends StatefulWidget {
-  final String email;
-  final String code;
-  const NewPasswordScreen({super.key, required this.email, required this.code});
+  final String resetToken;
+  const NewPasswordScreen({super.key, required this.resetToken});
 
   @override
   State<NewPasswordScreen> createState() => _NewPasswordScreenState();
@@ -29,43 +28,23 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     if (_resetting) return;
     if (!_form.currentState!.validate()) return;
 
-    final otp = int.tryParse(widget.code);
-    if (otp == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid code'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     setState(() => _resetting = true);
     try {
-      final success = await EmailAuth().resetPassword(
-        widget.email,
-        otp,
+      final response = await EmailAuth().resetPassword(
+        widget.resetToken,
         _passwordController.text,
       );
       if (!mounted) return;
 
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password reset successfully! Please sign in.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
+      if (response.success) {
         int count = 0;
         Navigator.popUntil(context, (route) => count++ >= 3);
-      } else {
+      }
+      if (response.message.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Failed to reset password. The code may be incorrect or expired.',
-            ),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
           ),
         );
       }

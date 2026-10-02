@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kisekae/screens/new_password.dart';
+import 'package:kisekae/services/email_auth.dart';
 
 class PasswordOTP extends StatefulWidget {
   final String email;
@@ -16,6 +17,7 @@ class _PasswordOTPState extends State<PasswordOTP> {
   late final List<TextEditingController> _controllers;
 
   bool _hasError = false;
+  bool _verifying = false;
   bool _resending = false;
 
   String get _code => _controllers.map((c) => c.text.trim()).join();
@@ -71,17 +73,82 @@ class _PasswordOTPState extends State<PasswordOTP> {
     }
   }
 
-  void _onVerify() {
+  Future<void> _onVerify() async {
+    if (_verifying || _resending) return;
     if (_code.length != _otpLength) {
       setState(() => _hasError = true);
       return;
     }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => NewPasswordScreen(email: widget.email, code: _code),
-      ),
-    );
+
+    final otp = int.tryParse(_code);
+    if (otp == null) {
+      setState(() => _hasError = true);
+      return;
+    }
+
+    setState(() {
+      _hasError = false;
+      _verifying = true;
+    });
+
+    try {
+      final response = await EmailAuth().verifyOtp(widget.email, otp, purpose: "password_reset");
+      if (!mounted) return;
+
+      if (response.success) {
+        final resetToken = response.data?["reset_token"]?.toString() ?? "";
+        if (resetToken.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Reset token missing from response"),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => NewPasswordScreen(resetToken: resetToken),
+          ),
+        );
+      } else {
+        setState(() => _hasError = true);
+      }
+
+      if (response.message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _verifying = false);
+    }
+  }
+
+  Future<void> _resendCode() async {
+    if (_resending) return;
+    setState(() => _resending = true);
+    try {
+      final response = await EmailAuth().sendOtp(
+        widget.email,
+        purpose: "password_reset",
+      );
+      if (!mounted) return;
+      if (response.message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
   }
 
   @override
@@ -166,19 +233,50 @@ class _PasswordOTPState extends State<PasswordOTP> {
               width: double.infinity,
               height: 48,
               child: FilledButton(
-                onPressed: _onVerify,
+                onPressed: _verifying ? null : _onVerify,
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Verify'),
+                child: _verifying
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Verify'),
               ),
             ),
             const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Didn't receive the code? ",
+                  style: TextStyle(fontSize: size.width * 0.037),
+                ),
+                GestureDetector(
+                  onTap: (_resending) ? null : _resendCode,
+                  child: Text(
+                    _resending ? 'Resending...' : 'Resend Code',
+                    style: TextStyle(
+                      fontSize: size.width * 0.037,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF8B2E3E),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 }
+
