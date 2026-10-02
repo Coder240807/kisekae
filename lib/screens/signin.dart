@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:kisekae/screens/forgot_password.dart';
 import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/screens/signin_otp.dart';
+import 'package:kisekae/screens/verify_code.dart';
 import 'package:kisekae/services/email_auth.dart';
-import 'package:kisekae/services/google_auth.dart';
+import 'package:kisekae/services/oauth.dart';
 
 class Signin extends StatefulWidget {
   const Signin({super.key});
@@ -17,61 +18,115 @@ class _SigninState extends State<Signin> {
   final _form = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final GoogleAuthService _googleAuthService = GoogleAuthService();
 
   bool _obscurePassword = true;
+  bool _loading = false;
+  bool _isOauthLoading = false;
 
   Future<void> _submitForm() async {
+    if (_loading || _isOauthLoading) return;
     if (_form.currentState!.validate()) {
-      final success = await EmailAuth().signIn(
-        _emailController.text,
-        _passwordController.text,
-      );
-      if (!mounted) return;
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Signed in successfully!'),
-            backgroundColor: Colors.green,
-          ),
+      setState(() => _loading = true);
+      try {
+        final email = _emailController.text.trim();
+
+        final response = await EmailAuth().signIn(
+          email,
+          _passwordController.text,
         );
+        if (!mounted) return;
+        if (response.success) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            (route) => false,
+          );
+        }
+        if (response.message.toLowerCase().contains("email is not verified")) {
+          final otpResponse = await EmailAuth().sendOtp(
+            email,
+            purpose: "verify_email",
+          );
+          if (!mounted) return;
+          if (otpResponse.message.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(otpResponse.message),
+                backgroundColor: otpResponse.success
+                    ? Colors.green
+                    : Colors.red,
+              ),
+            );
+          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => VerifyCodeScreen(email: email)),
+          );
+          return;
+        }
+        if (response.message.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message),
+              backgroundColor: response.success ? Colors.green : Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isOauthLoading = false);
+      }
+    }
+  }
+
+  Future<void> _googleAuth() async {
+    if (_loading || _isOauthLoading) return;
+    setState(() => _isOauthLoading = true);
+    try {
+      final response = await SocialAuth().signInWithGoogle();
+      if (!mounted) return;
+      if (response.success) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
           (route) => false,
         );
-      } else {
+      }
+      if (response.message.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to sign in'),
-            backgroundColor: Colors.red,
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isOauthLoading = false);
     }
   }
 
-  Future<void> _goauth() async {
-    final success = await _googleAuthService.signInAndAuthenticate();
-    if (!mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Google OAuth success.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Google OAuth failed'),
-          backgroundColor: Colors.red,
-        ),
-      );
+  Future<void> _githubAuth() async {
+    if (_loading || _isOauthLoading) return;
+    setState(() => _isOauthLoading = true);
+    try {
+      final response = await SocialAuth().signInWithGitHub();
+      if (!mounted) return;
+      if (response.success) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      }
+      if (response.message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isOauthLoading = false);
     }
   }
 
@@ -211,16 +266,25 @@ class _SigninState extends State<Signin> {
               width: double.infinity,
               height: size.height * 0.065,
               child: FilledButton(
-                onPressed: _submitForm,
+                onPressed: (_loading || _isOauthLoading) ? null : _submitForm,
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
-                  'SIGN IN',
-                  style: TextStyle(fontSize: size.width * 0.04),
-                ),
+                child: _loading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        'SIGN IN',
+                        style: TextStyle(fontSize: size.width * 0.04),
+                      ),
               ),
             ),
             SizedBox(height: size.height * 0.02),
@@ -238,27 +302,18 @@ class _SigninState extends State<Signin> {
               width: double.infinity,
               height: size.height * 0.065,
               child: OutlinedButton(
-                onPressed: () {
-                  final email = _emailController.text.trim();
-                  final emailRegex = RegExp(
-                    r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
-                  );
-                  if (!emailRegex.hasMatch(email)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please enter a valid email address'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SigninOtp(email: email),
-                    ),
-                  );
-                },
+                onPressed: (_loading || _isOauthLoading)
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SigninOtp(
+                              email: _emailController.text.trim(),
+                            ),
+                          ),
+                        );
+                      },
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: colors.primary),
                   shape: RoundedRectangleBorder(
@@ -289,12 +344,23 @@ class _SigninState extends State<Signin> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: _goauth,
+                  onTap: (_loading) ? null : _googleAuth,
                   child: CircleAvatar(
                     backgroundColor: Colors.white,
                     child: Padding(
                       padding: const EdgeInsets.all(8),
                       child: Image.asset('assets/icons/google.png'),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 24),
+                GestureDetector(
+                  onTap: (_loading) ? null : _githubAuth,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Image.asset('assets/icons/github.png'),
                     ),
                   ),
                 ),

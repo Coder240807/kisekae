@@ -1,7 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:kisekae/services/token_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:kisekae/screens/getting_started.dart';
+
+class AuthResponse {
+  final bool success;
+  final String message;
+  final Map<String, dynamic>? data;
+
+  AuthResponse(this.success, this.message, [this.data]);
+}
 
 class EmailAuth {
   final Dio dio = Dio(BaseOptions(baseUrl: dotenv.get('BASE_URL')))
@@ -23,156 +30,190 @@ class EmailAuth {
 
   final TokenStorage _tokenStorage = TokenStorage();
 
-  Future<bool> signIn(String email, String password) async {
+  Future<AuthResponse> signIn(String email, String password) async {
     try {
       final response = await dio.post(
         '/accounts/login/password/',
         data: {"email": email, "password": password},
       );
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-
-        final String accessToken = data["tokens"]["access"];
-        final String refreshToken = data["tokens"]["refresh"];
-
-        await _tokenStorage.write(
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-        );
-        return true;
+      print(response);
+      if (!await _saveTokens(response.headers)) {
+        return AuthResponse(false, "Tokens missing from response headers.");
       } else {
-        print("Auth Error: ${response.statusCode} ${response.data}");
+        return AuthResponse(
+          true,
+          response.data["message"]?.toString() ?? "",
+          Map<String, dynamic>.from(response.data["data"] ?? {}),
+        );
       }
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      return AuthResponse(
+        false,
+        body is Map
+            ? body["message"].toString()
+            : (e.message ?? "Network error"),
+      );
     } catch (e) {
-      print("Auth Error: $e");
+      return AuthResponse(false, "Unexpected error: $e");
     }
-    return false;
   }
 
-  Future<bool> signUp(String name, String email, String password) async {
+  Future<AuthResponse> signUp(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
       final response = await dio.post(
         '/accounts/register/',
         data: {"name": name, "email": email, "password": password},
       );
-
-      if (response.statusCode == 201) {
-        final data = response.data;
-
-        final String accessToken = data["tokens"]["access"];
-        final String refreshToken = data["tokens"]["refresh"];
-
-        await _tokenStorage.write(
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-        );
-        return true;
-      } else {
-        print("Auth Error: ${response.statusCode} ${response.data}");
-      }
+      return AuthResponse(
+        true,
+        response.data["message"]?.toString() ?? "",
+        Map<String, dynamic>.from(response.data["data"] ?? {}),
+      );
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      return AuthResponse(
+        false,
+        body is Map
+            ? body["message"].toString()
+            : (e.message ?? "Network error"),
+      );
     } catch (e) {
-      print("Auth Error: $e");
+      return AuthResponse(false, "Unexpected error: $e");
     }
-    return false;
   }
 
-  Future<bool> sendOtp(String email, {String purpose = "login"}) async {
+  Future<AuthResponse> sendOtp(String email, {String purpose = "login"}) async {
     try {
       final response = await dio.post(
         '/accounts/otp/request/',
         data: {"email": email, "purpose": purpose},
       );
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        print("Auth Error: ${response.statusCode} ${response.data}");
-      }
+      print(response);
+      return AuthResponse(true, response.data["message"]?.toString() ?? "");
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      return AuthResponse(
+        false,
+        body is Map
+            ? body["message"].toString()
+            : (e.message ?? "Network error"),
+      );
     } catch (e) {
-      print("Auth Error: $e");
+      return AuthResponse(false, "Unexpected error: $e");
     }
-    return false;
   }
 
-  Future<bool> verifyOtp(String email, int code) async {
+  Future<AuthResponse> verifyOtp(String email, int code, {required String purpose}) async {
     try {
       final response = await dio.post(
         '/accounts/otp/verify/',
-        data: {"email": email, "code": code},
+        data: {"email": email, "code": code, "purpose": purpose},
       );
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-
-        final String accessToken = data["tokens"]["access"];
-        final String refreshToken = data["tokens"]["refresh"];
-
-        await _tokenStorage.write(
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-        );
-        return true;
-      } else {
-        print("Auth Error: ${response.statusCode} ${response.data}");
+      if (purpose == "login") {
+        if (!await _saveTokens(response.headers)) {
+          return AuthResponse(false, "Tokens missing from response headers.");
+        }
       }
+      return AuthResponse(
+        true,
+        response.data["message"]?.toString() ?? "",
+        Map<String, dynamic>.from(response.data["data"] ?? {}),
+      );
     } on DioException catch (e) {
-      print("verifyOtp status: ${e.response?.statusCode}");
-      print("verifyOtp body: ${e.response?.data}");
-      print("verifyOtp sent: ${e.requestOptions.data}");
+      final body = e.response?.data;
+      return AuthResponse(
+        false,
+        body is Map
+            ? body["message"].toString()
+            : (e.message ?? "Network error"),
+      );
     } catch (e) {
-      print("Auth Error: $e");
+      return AuthResponse(false, "Unexpected error: $e");
     }
-    return false;
   }
 
-  Future<bool> resetPassword(String email, int code, String newPassword) async {
+  Future<AuthResponse> resetPassword(
+    String token,
+    String newPassword,
+  ) async {
     try {
       final response = await dio.post(
         '/accounts/password/reset/',
-        data: {"email": email, "code": code, "new_password": newPassword},
+        data: {"token": token, "new_password": newPassword},
       );
-
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        print("Auth Error: ${response.statusCode} ${response.data}");
-      }
+      return AuthResponse(true, response.data["message"]?.toString() ?? "");
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      return AuthResponse(
+        false,
+        body is Map
+            ? body["message"].toString()
+            : (e.message ?? "Network error"),
+      );
     } catch (e) {
-      print("Auth Error: $e");
+      return AuthResponse(false, "Unexpected error: $e");
     }
-    return false;
   }
 
-  Future<bool> logout() async {
+  Future<AuthResponse> logout() async {
     try {
       final accessToken = await _tokenStorage.readAccessToken();
       final refreshToken = await _tokenStorage.readRefreshToken();
-      print("$accessToken, $refreshToken");
+
       final response = await dio.post(
         '/accounts/logout/',
-        data: {"refresh": refreshToken},
-        options: Options(headers: {"Authorization": "Bearer $accessToken"}),
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $accessToken",
+            "X-Refresh-Token": refreshToken,
+          },
+        ),
       );
-      if (response.statusCode == 200) {
-        await _tokenStorage.deleteAll();
-        return true;
-      } else {
-        print("Logout Error: ${response.statusCode} ${response.data}");
-      }
+      await _tokenStorage.deleteAll();
+      return AuthResponse(true, response.data["message"]?.toString() ?? "");
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
-        print(
-          "Logout failed on server because session was already expired (401). Local tokens cleared.",
-        );
-        return true;
-      } else {
-        print(
-          "Logout network error occurred: ${e.message} (Status Code: ${e.response?.statusCode})",
-        );
+        await _tokenStorage.deleteAll();
+        return AuthResponse(true, "Session already expired.");
       }
+      final body = e.response?.data;
+      return AuthResponse(
+        false,
+        body is Map
+            ? body["message"].toString()
+            : (e.message ?? "Logout failed"),
+      );
     } catch (e) {
-      print("Unexpected logout failure: $e");
+      return AuthResponse(false, "Unexpected error: $e");
     }
-    return false;
+  }
+
+  Future<bool> _saveTokens(Headers headers) async {
+    final authHeader = headers.value('authorization');
+    final refreshToken = headers.value('x-refresh-token');
+
+    if (authHeader == null || refreshToken == null) {
+      return false;
+    }
+
+    final accessToken = authHeader.toLowerCase().startsWith('bearer ')
+        ? authHeader.substring(7).trim()
+        : authHeader.trim();
+
+    if (accessToken.isEmpty || refreshToken.isEmpty) {
+      return false;
+    }
+
+    await _tokenStorage.write(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
+
+    return true;
   }
 }

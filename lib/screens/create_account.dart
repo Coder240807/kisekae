@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kisekae/screens/home_screen.dart';
+import 'package:kisekae/screens/verify_code.dart';
 import 'package:kisekae/services/email_auth.dart';
-import 'package:kisekae/services/google_auth.dart';
+import 'package:kisekae/services/oauth.dart';
 
 class CreateAccount extends StatefulWidget {
   const CreateAccount({super.key});
@@ -13,7 +14,6 @@ class CreateAccount extends StatefulWidget {
 
 class _CreateAccountState extends State<CreateAccount> {
   final _form = GlobalKey<FormState>();
-  final GoogleAuthService _googleAuthService = GoogleAuthService();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -22,60 +22,109 @@ class _CreateAccountState extends State<CreateAccount> {
       TextEditingController();
 
   bool _obscurePassword = true;
+  bool _loading = false;
+  bool _isOauthLoading = false;
 
   void _submitForm() async {
+    if (_loading || _isOauthLoading) return;
     if (_form.currentState!.validate()) {
-      final success = await EmailAuth().signUp(
-        _nameController.text,
-        _emailController.text,
-        _passwordController.text,
-      );
-      if (!mounted) return;
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Account registered successfully!'),
-            backgroundColor: Colors.green,
-          ),
+      setState(() => _loading = true);
+      try {
+        final email = _emailController.text.trim();
+        final response = await EmailAuth().signUp(
+          _nameController.text.trim(),
+          email,
+          _passwordController.text,
         );
+        if (!mounted) return;
+        if (response.success) {
+          final otpResponse = await EmailAuth().sendOtp(
+            email,
+            purpose: "verify_email",
+          );
+          if (!mounted) return;
+          if (otpResponse.message.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(otpResponse.message),
+                backgroundColor: otpResponse.success
+                    ? Colors.green
+                    : Colors.red,
+              ),
+            );
+          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => VerifyCodeScreen(email: email)),
+          );
+          return;
+        }
+
+        if (response.message.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _loading = false);
+        }
+      }
+    }
+  }
+
+  Future<void> _googleAuth() async {
+    if (_loading || _isOauthLoading) return;
+    setState(() => _isOauthLoading = true);
+    try {
+      final response = await SocialAuth().signInWithGoogle();
+      if (!mounted) return;
+      if (response.success) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
           (route) => false,
         );
-      } else {
+      }
+      if (response.message.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to register account'),
-            backgroundColor: Colors.red,
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isOauthLoading = false);
     }
   }
 
-  Future<void> _goauth() async {
-    final success = await _googleAuthService.signInAndAuthenticate();
-    if (!mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Google OAuth success.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Google OAuth failed'),
-          backgroundColor: Colors.red,
-        ),
-      );
+  Future<void> _githubAuth() async {
+    if (_loading || _isOauthLoading) return;
+    setState(() => _isOauthLoading = true);
+    try {
+      final response = await SocialAuth().signInWithGitHub();
+      if (!mounted) return;
+      if (response.success) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      }
+      if (response.message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: response.success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isOauthLoading = false);
     }
   }
 
@@ -222,7 +271,7 @@ class _CreateAccountState extends State<CreateAccount> {
                         r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,128}$',
                       );
                       if (!passwordRegex.hasMatch(value)) {
-                        return 'Password must include a letter, a number, and a special character';
+                        return 'Password must include a letter,\na number, and a special character';
                       }
                       return null;
                     },
@@ -249,7 +298,9 @@ class _CreateAccountState extends State<CreateAccount> {
                   SizedBox(height: size.height * 0.035),
 
                   ElevatedButton(
-                    onPressed: _submitForm,
+                    onPressed: (_loading || _isOauthLoading)
+                        ? null
+                        : _submitForm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF8B2E3E),
                       foregroundColor: Colors.white,
@@ -259,13 +310,22 @@ class _CreateAccountState extends State<CreateAccount> {
                       ),
                       elevation: 0,
                     ),
-                    child: Text(
-                      'CREATE ACCOUNT',
-                      style: TextStyle(
-                        fontSize: size.width * 0.04,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            'CREATE ACCOUNT',
+                            style: TextStyle(
+                              fontSize: size.width * 0.04,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                   SizedBox(height: size.height * 0.04),
 
@@ -294,12 +354,23 @@ class _CreateAccountState extends State<CreateAccount> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-                        onTap: _goauth,
+                        onTap: (_loading) ? null : _googleAuth,
                         child: CircleAvatar(
                           backgroundColor: Colors.white,
                           child: Padding(
                             padding: const EdgeInsets.all(8),
                             child: Image.asset('assets/icons/google.png'),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 24),
+                      GestureDetector(
+                        onTap: (_loading) ? null : _githubAuth,
+                        child: CircleAvatar(
+                          backgroundColor: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Image.asset('assets/icons/github.png'),
                           ),
                         ),
                       ),
