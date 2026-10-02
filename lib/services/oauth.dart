@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
@@ -39,6 +40,9 @@ class SocialAuth {
     final callback = dotenv.get('GOOGLE_CALLBACK_URL');
     final state = _randomState();
 
+    final codeVerifier = _generateCodeVerifier();
+    final codeChallenge = _generateCodeChallenge(codeVerifier);
+
     final url = Uri.https('accounts.google.com', '/o/oauth2/v2/auth', {
       'client_id': dotenv.get('GOOGLE_CLIENT_ID'),
       'redirect_uri': callback,
@@ -47,6 +51,8 @@ class SocialAuth {
       'access_type': 'offline',
       'prompt': 'consent',
       'state': state,
+      'code_challenge': codeChallenge,
+      'code_challenge_method': 'S256',
     });
 
     return _signIn(
@@ -55,6 +61,7 @@ class SocialAuth {
       callback: callback,
       state: state,
       path: '/accounts/oauth/google/',
+      codeVerifier: codeVerifier,
     );
   }
 
@@ -84,6 +91,7 @@ class SocialAuth {
     required String callback,
     required String state,
     required String path,
+    String? codeVerifier,
   }) async {
     try {
       final result = await FlutterWebAuth2.authenticate(
@@ -106,7 +114,7 @@ class SocialAuth {
         return AuthResponse(false, "$provider did not return an auth code.");
       }
 
-      return await _exchangeCode(path, code, callback);
+      return await _exchangeCode(path, code, callback, codeVerifier);
     } on PlatformException catch (e) {
       if (e.code == 'CANCELED') {
         return AuthResponse(false, "Sign in cancelled.");
@@ -123,10 +131,15 @@ class SocialAuth {
     String path,
     String code,
     String callbackUrl,
+    String? codeVerifier
   ) async {
     final response = await dio.post(
       path,
-      data: {"code": code, "callback_url": callbackUrl},
+      data: {
+        "code": code,
+        "callback_url": callbackUrl,
+        if (codeVerifier != null) "code_verifier": codeVerifier,
+      },
     );
 
     if (!await _saveTokens(response.headers)) {
@@ -150,6 +163,14 @@ class SocialAuth {
   String _randomState() => base64UrlEncode(
     List<int>.generate(16, (_) => Random.secure().nextInt(256)),
   );
+
+  String _generateCodeVerifier() => base64UrlEncode(
+    List<int>.generate(32, (_) => Random.secure().nextInt(256)),
+  ).replaceAll('=', '');
+
+  String _generateCodeChallenge(String verifier) =>
+      base64UrlEncode(sha256.convert(utf8.encode(verifier)).bytes)
+          .replaceAll('=', '');
 
   Future<bool> _saveTokens(Headers headers) async {
     final authHeader = headers.value('authorization');

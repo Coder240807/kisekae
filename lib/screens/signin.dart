@@ -41,6 +41,7 @@ class _SigninState extends State<Signin> {
             MaterialPageRoute(builder: (_) => const HomeScreen()),
             (route) => false,
           );
+          return;
         }
         if (response.message.toLowerCase().contains("email is not verified")) {
           final otpResponse = await EmailAuth().sendOtp(
@@ -73,7 +74,7 @@ class _SigninState extends State<Signin> {
           );
         }
       } finally {
-        if (mounted) setState(() => _isOauthLoading = false);
+        if (mounted) setState(() => _loading = false);
       }
     }
   }
@@ -308,9 +309,8 @@ class _SigninState extends State<Signin> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => SigninOtp(
-                              email: _emailController.text.trim(),
-                            ),
+                            builder: (context) =>
+                                SigninOtp(email: _emailController.text.trim()),
                           ),
                         );
                       },
