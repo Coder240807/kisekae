@@ -15,7 +15,10 @@ class EmailAuth {
     ..interceptors.add(
       InterceptorsWrapper(
         onError: (DioException error, ErrorInterceptorHandler handler) async {
-          if (error.response?.statusCode == 401) {
+          final hadAuthHeader = error.requestOptions.headers.containsKey(
+            'Authorization',
+          );
+          if (error.response?.statusCode == 401 && hadAuthHeader) {
             print("Session Expired. Logging Out...");
             await TokenStorage().deleteAll();
             return handler.next(error);
@@ -108,7 +111,11 @@ class EmailAuth {
     }
   }
 
-  Future<AuthResponse> verifyOtp(String email, int code, {required String purpose}) async {
+  Future<AuthResponse> verifyOtp(
+    String email,
+    int code, {
+    required String purpose,
+  }) async {
     try {
       final response = await dio.post(
         '/accounts/otp/verify/',
@@ -137,10 +144,7 @@ class EmailAuth {
     }
   }
 
-  Future<AuthResponse> resetPassword(
-    String token,
-    String newPassword,
-  ) async {
+  Future<AuthResponse> resetPassword(String token, String newPassword) async {
     try {
       final response = await dio.post(
         '/accounts/password/reset/',
