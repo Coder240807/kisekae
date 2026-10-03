@@ -16,6 +16,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
   final TextEditingController _confirmController = TextEditingController();
 
   bool _resetting = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -99,7 +100,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     maxLength: 128,
                     maxLengthEnforcement: MaxLengthEnforcement.enforced,
@@ -130,6 +131,20 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                       border: blackBorder,
                       enabledBorder: blackBorder,
                       focusedBorder: blackBorder,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.black,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -163,6 +178,20 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                       border: blackBorder,
                       enabledBorder: blackBorder,
                       focusedBorder: blackBorder,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.black,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),
