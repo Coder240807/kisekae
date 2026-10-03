@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'dart:async';
+
 import 'package:kisekae/screens/new_password.dart';
 import 'package:kisekae/services/email_auth.dart';
 
@@ -21,6 +24,10 @@ class _PasswordOTPState extends State<PasswordOTP> {
   bool _resending = false;
 
   String get _code => _controllers.map((c) => c.text.trim()).join();
+  String _errorText = '';
+
+  Timer? _timer;
+  int _secondsLeft = 0;
 
   @override
   void initState() {
@@ -30,6 +37,7 @@ class _PasswordOTPState extends State<PasswordOTP> {
       _otpLength,
       (index) => TextEditingController(),
     );
+    _startTimer();
   }
 
   @override
@@ -40,22 +48,29 @@ class _PasswordOTPState extends State<PasswordOTP> {
     for (var node in _focusNodes) {
       node.dispose();
     }
+    _timer?.cancel();
     super.dispose();
   }
 
   void _onChanged(String value, int index) {
     if (_hasError) setState(() => _hasError = false);
     if (value.length > 1) {
-      String digitsOnly = value.replaceAll(RegExp(r'\D'), '');
+      final digitsOnly = value.replaceAll(RegExp(r'\D'), '');
       for (int i = 0; i < _otpLength; i++) {
         if (i < digitsOnly.length) {
-          _controllers[i].text = digitsOnly[i];
+          _controllers[i].value = TextEditingValue(
+            text: digitsOnly[i],
+            selection: const TextSelection.collapsed(offset: 1),
+          );
         }
       }
-      if (digitsOnly.length >= _otpLength) {
-        _focusNodes[_otpLength - 1].unfocus();
-      } else if (digitsOnly.isNotEmpty) {
-        _focusNodes[digitsOnly.length].requestFocus();
+      if (digitsOnly.isNotEmpty) {
+        final target = digitsOnly.length >= _otpLength
+            ? _otpLength - 1
+            : digitsOnly.length;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _focusNodes[target].requestFocus();
+        });
       }
       return;
     }
@@ -73,10 +88,36 @@ class _PasswordOTPState extends State<PasswordOTP> {
     }
   }
 
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() => _secondsLeft = 60);
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return t.cancel();
+      if (_secondsLeft <= 1) {
+        t.cancel();
+        setState(() => _secondsLeft = 0);
+      } else {
+        setState(() => _secondsLeft--);
+      }
+    });
+  }
+
+  String _maskEmail(String email) {
+    final parts = email.split('@');
+    if (parts.length != 2) return email;
+    final name = parts[0];
+    final visible = name.length <= 2 ? 1 : 2;
+    final stars = (name.length - visible).clamp(1, 5);
+    return '${name.substring(0, visible)}${'*' * stars}@${parts[1]}';
+  }
+
   Future<void> _onVerify() async {
     if (_verifying || _resending) return;
     if (_code.length != _otpLength) {
-      setState(() => _hasError = true);
+      setState(() {
+        _hasError = true;
+        _errorText = "Please enter the full 6-digit code";
+      });
       return;
     }
 
@@ -92,7 +133,11 @@ class _PasswordOTPState extends State<PasswordOTP> {
     });
 
     try {
-      final response = await EmailAuth().verifyOtp(widget.email, otp, purpose: "password_reset");
+      final response = await EmailAuth().verifyOtp(
+        widget.email,
+        otp,
+        purpose: "password_reset",
+      );
       if (!mounted) return;
 
       if (response.success) {
@@ -114,6 +159,7 @@ class _PasswordOTPState extends State<PasswordOTP> {
         );
       } else {
         setState(() => _hasError = true);
+        _errorText = "Incorrect code. Please try again.";
       }
 
       if (response.message.isNotEmpty) {
@@ -138,6 +184,7 @@ class _PasswordOTPState extends State<PasswordOTP> {
         purpose: "password_reset",
       );
       if (!mounted) return;
+      if (response.success) _startTimer();
       if (response.message.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -183,7 +230,7 @@ class _PasswordOTPState extends State<PasswordOTP> {
         child: Column(
           children: [
             Text(
-              'We have sent a 6 digit code to ${widget.email}',
+              'We have sent a 6 digit code to ${_maskEmail(widget.email)}',
               style: TextStyle(fontSize: size.width * 0.045),
             ),
             SizedBox(height: size.height * 0.02),
@@ -218,17 +265,53 @@ class _PasswordOTPState extends State<PasswordOTP> {
                 ),
               ),
             ),
+
             if (_hasError)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text(
-                  "Please enter the full 6-digit code",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.red, fontSize: 14),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    _errorText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.red, fontSize: 14),
+                  ),
                 ),
               ),
-            const SizedBox(height: 96),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Didn't receive the code? ",
+                  style: TextStyle(fontSize: size.width * 0.037),
+                ),
+                if (_secondsLeft > 0)
+                  Text(
+                    '0:${_secondsLeft.toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      fontSize: size.width * 0.037,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF8B2E3E),
+                    ),
+                  )
+                else
+                  GestureDetector(
+                    onTap: (_resending) ? null : _resendCode,
+                    child: Text(
+                      _resending ? 'Resending...' : 'Resend Code',
+                      style: TextStyle(
+                        fontSize: size.width * 0.037,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8B2E3E),
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 68),
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -252,31 +335,9 @@ class _PasswordOTPState extends State<PasswordOTP> {
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Didn't receive the code? ",
-                  style: TextStyle(fontSize: size.width * 0.037),
-                ),
-                GestureDetector(
-                  onTap: (_resending) ? null : _resendCode,
-                  child: Text(
-                    _resending ? 'Resending...' : 'Resend Code',
-                    style: TextStyle(
-                      fontSize: size.width * 0.037,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF8B2E3E),
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
     );
   }
 }
-

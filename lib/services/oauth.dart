@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
@@ -21,7 +22,10 @@ class SocialAuth {
     ..interceptors.add(
       InterceptorsWrapper(
         onError: (DioException error, ErrorInterceptorHandler handler) async {
-          if (error.response?.statusCode == 401) {
+          final hadAuthHeader = error.requestOptions.headers.containsKey(
+            'Authorization',
+          );
+          if (error.response?.statusCode == 401 && hadAuthHeader) {
             print("Session Expired. Logging Out...");
             await TokenStorage().deleteAll();
             return handler.next(error);
@@ -37,7 +41,15 @@ class SocialAuth {
   final TokenStorage _tokenStorage = TokenStorage();
 
   Future<AuthResponse> signInWithGoogle() {
-    final callback = dotenv.get('GOOGLE_CALLBACK_URL');
+    final isIOS = Platform.isIOS;
+    final clientId = dotenv.get(
+      isIOS ? 'GOOGLE_IOS_CLIENT_ID' : 'GOOGLE_ANDROID_CLIENT_ID',
+    );
+    final callback = dotenv.get(
+      isIOS ? 'GOOGLE_IOS_CALLBACK_URL' : 'GOOGLE_ANDROID_CALLBACK_URL',
+    );
+
+    //final callback = dotenv.get('GOOGLE_CALLBACK_URL');
     final state = _randomState();
 
     final codeVerifier = _generateCodeVerifier();
@@ -131,7 +143,7 @@ class SocialAuth {
     String path,
     String code,
     String callbackUrl,
-    String? codeVerifier
+    String? codeVerifier,
   ) async {
     final response = await dio.post(
       path,
