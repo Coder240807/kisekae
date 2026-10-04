@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/getting_started.dart';
+import 'package:kisekae/screens/search.dart';
 import 'package:kisekae/services/email_auth.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,6 +25,37 @@ class _HomeScreenState extends State<HomeScreen> {
             label: const Text("Logout"),
           ),
         ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SearchScreen()),
+                  );
+                },
+                label: const Text(
+                  'EXPLORE YOUR STYLE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                icon: Icon(Icons.search, size: 24),
+                style: FilledButton.styleFrom(
+                  alignment: Alignment.centerLeft,
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
