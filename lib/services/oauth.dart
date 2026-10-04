@@ -49,7 +49,6 @@ class SocialAuth {
       isIOS ? 'GOOGLE_IOS_CALLBACK_URL' : 'GOOGLE_ANDROID_CALLBACK_URL',
     );
 
-    //final callback = dotenv.get('GOOGLE_CALLBACK_URL');
     final state = _randomState();
 
     final codeVerifier = _generateCodeVerifier();
