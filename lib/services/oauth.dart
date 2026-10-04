@@ -55,7 +55,7 @@ class SocialAuth {
     final codeChallenge = _generateCodeChallenge(codeVerifier);
 
     final url = Uri.https('accounts.google.com', '/o/oauth2/v2/auth', {
-      'client_id': dotenv.get('GOOGLE_CLIENT_ID'),
+      'client_id': clientId,
       'redirect_uri': callback,
       'response_type': 'code',
       'scope': 'openid email profile',
@@ -149,7 +149,7 @@ class SocialAuth {
       data: {
         "code": code,
         "callback_url": callbackUrl,
-        if (codeVerifier != null) "code_verifier": codeVerifier,
+        "code_verifier": ?codeVerifier,
       },
     );
 

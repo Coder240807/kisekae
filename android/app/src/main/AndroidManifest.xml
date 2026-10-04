@@ -33,7 +33,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="live.kisekae.app" />
+                <data android:scheme="com.googleusercontent.apps.1046679130755-pc337dk11oovnipgu1at9ueog5nt072c" />
                 <data android:scheme="kisekae" />
             </intent-filter>
         </activity>
