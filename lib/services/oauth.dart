@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:kisekae/services/dio.dart';
-import 'package:kisekae/services/token_storage.dart';
+import 'package:kisekae/services/storage.dart';
 
 class AuthResponse {
   final bool success;
@@ -171,7 +171,7 @@ class SocialAuth {
       return false;
     }
 
-    await _tokenStorage.write(accessToken: accessToken);
+    await _tokenStorage.write(accessToken);
 
     return true;
   }

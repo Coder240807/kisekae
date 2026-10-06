@@ -2,8 +2,7 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:kisekae/services/token_storage.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:kisekae/services/storage.dart';
 
 class DioClient {
   DioClient._();
@@ -15,8 +14,7 @@ class DioClient {
   static Future<void> init() async {
     if (_initialized) return;
 
-    final dir = await getApplicationDocumentsDirectory();
-    cookieJar = PersistCookieJar(storage: FileStorage('${dir.path}/.cookies/'));
+    cookieJar = PersistCookieJar(storage: CookieStorage());
     dio = Dio(BaseOptions(baseUrl: dotenv.get('BASE_URL')));
 
     dio.interceptors.addAll([
