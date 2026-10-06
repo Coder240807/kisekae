@@ -35,16 +35,18 @@ class SearchScreen extends StatelessWidget {
                 label: const Text(
                   'EXPLORE YOUR STYLE',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
                   ),
                 ),
-                icon: Icon(Icons.search, size: 24),
+                icon: Icon(Icons.search, size: 24, color: Colors.black),
                 style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFE8D8C4),
                   alignment: Alignment.centerLeft,
                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  side: BorderSide(color: const Color(0xFFB78876)),
                 ),
               ),
             ),
@@ -69,6 +71,7 @@ class SearchScreen extends StatelessWidget {
             Wrap(
               spacing: 16,
               runSpacing: 16,
+              alignment: WrapAlignment.start,
               runAlignment: WrapAlignment.start,
               children: [
                 _inputChip("Jacket"),

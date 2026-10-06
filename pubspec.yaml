@@ -72,6 +72,11 @@ flutter:
     - assets/images/onboarding3.png
     - assets/icons/google.png
     - assets/icons/github.png
+    - assets/images/cloth_1.jpg
+    - assets/images/cloth_2.jpg
+    - assets/images/cloth_3.jpg
+    - assets/images/cloth_4.jpg
+    - assets/images/homescreen.png
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

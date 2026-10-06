@@ -370,6 +370,7 @@ class _CreateAccountState extends State<CreateAccount> {
                       GestureDetector(
                         onTap: (_loading) ? null : _googleAuth,
                         child: CircleAvatar(
+                          radius: 24,
                           backgroundColor: Colors.white,
                           child: Padding(
                             padding: const EdgeInsets.all(8),
@@ -381,6 +382,7 @@ class _CreateAccountState extends State<CreateAccount> {
                       GestureDetector(
                         onTap: (_loading) ? null : _githubAuth,
                         child: CircleAvatar(
+                          radius: 24,
                           backgroundColor: Colors.white,
                           child: Padding(
                             padding: const EdgeInsets.all(8),

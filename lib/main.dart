@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/getting_started.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:kisekae/screens/onboarding/onboarding1.dart';
+import 'package:kisekae/screens/onboarding_screen.dart';
 
 void main() async {
   await dotenv.load();
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       routes: {'/login': (context) => const GettingStartedScreen()},
-      home: const OnBoarding1(),
+      home: const OnboardingScreen(),
     );
   }
 }
