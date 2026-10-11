@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/profile.dart';
 
 class BottomBar extends StatefulWidget {
   const BottomBar({super.key});
@@ -31,7 +32,16 @@ class _BottomBarState extends State<BottomBar> {
       borderRadius: BorderRadius.circular(28),
       child: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+        onDestinationSelected: (i) {
+          if (i == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
+          } else if (i == 0) {
+            setState(() => _selectedIndex = i);
+          }
+        },
         elevation: 0,
         backgroundColor: _barColor,
         surfaceTintColor: Colors.transparent,
