@@ -38,9 +38,7 @@ class CookieStorage implements Storage {
 
   @override
   Future<void> deleteAll(List<String> keys) async {
-    for (var key in keys) {
-      await _secureStorage.delete(key: key);
-    }
+    await Future.wait(keys.map((key) => _secureStorage.delete(key: key)));
   }
 
   @override
