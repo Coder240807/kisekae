@@ -1,91 +1,16 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:kisekae/models/store_member.dart';
+import 'package:kisekae/services/dio.dart';
+import 'package:kisekae/services/helper.dart';
 
 import '../models/store_create.dart';
 
-class StoreException implements Exception {
-  final int? statusCode;
-  final bool success;
-  final String message;
-  final String? code;
-  final String? details;
-
-  StoreException({
-    this.statusCode,
-    required this.success,
-    required this.message,
-    this.code,
-    this.details,
-  });
-
-  factory StoreException.fromDioException(DioException e) {
-    final responseData = e.response?.data;
-    if (responseData is Map<String, dynamic>) {
-      return StoreException(
-        statusCode: e.response?.statusCode,
-        success: responseData['success'] as bool? ?? false,
-        message: responseData['message'] as String? ?? 'An error occurred',
-        code: responseData['error']?['code'] as String?,
-        details: responseData['error']?['details'] as String?,
-      );
-    }
-    return StoreException(
-      statusCode: e.response?.statusCode,
-      success: false,
-      message: e.message ?? 'Network connection error',
-    );
-  }
-
-  @override
-  String toString() => '[$statusCode - $code] $message: $details';
-}
-
-class StoreOperations {
+class StoreOperations extends BaseRepository {
   final Dio _dio;
 
-  StoreOperations({required Future<String?> Function() getToken})
-    : _dio = Dio(
-        BaseOptions(
-          baseUrl: dotenv.get('BASE_URL'),
-          headers: {'Content-Type': 'application/json'},
-        ),
-      ) {
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await getToken();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          return handler.next(options);
-        },
-        onError: (DioException error, handler) {
-          final storeException = StoreException.fromDioException(error);
-          return handler.reject(
-            DioException(
-              requestOptions: error.requestOptions,
-              response: error.response,
-              type: error.type,
-              error: storeException,
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Future<T> _execute<T>(Future<T> Function() request) async {
-    try {
-      return await request();
-    } on DioException catch (e) {
-      if (e.error is StoreException) {
-        throw e.error as StoreException;
-      }
-      throw StoreException(success: false, message: 'Request failed');
-    }
-  }
+  StoreOperations([Dio? dio]) : _dio = dio ?? DioClient.dio;
 
   Future<PaginatedStoreResponse> getStores({
     bool? includeArchived,
@@ -94,7 +19,7 @@ class StoreOperations {
     String? role,
     String? status,
   }) async {
-    return _execute(() async {
+    return execute(() async {
       final queryParams = <String, dynamic>{
         'include_archived': ?includeArchived,
         'page': ?page,
@@ -117,7 +42,7 @@ class StoreOperations {
     required String contactEmail,
     required String contactPhone,
   }) async {
-    return _execute(() async {
+    return execute(() async {
       final response = await _dio.post(
         '/stores/',
         data: {
@@ -132,7 +57,7 @@ class StoreOperations {
   }
 
   Future<Store> getStoreById(int storeId) async {
-    return _execute(() async {
+    return execute(() async {
       final response = await _dio.get('/stores/$storeId');
       return Store.fromJson(response.data as Map<String, dynamic>);
     });
@@ -145,7 +70,7 @@ class StoreOperations {
     String? contactEmail,
     String? contactPhone,
   }) async {
-    return _execute(() async {
+    return execute(() async {
       final payload = <String, dynamic>{
         'name': ?name,
         'description': ?description,
@@ -157,15 +82,14 @@ class StoreOperations {
     });
   }
 
-  Future<Store> archiveStore(int storeId) async {
-    return _execute(() async {
-      final response = await _dio.delete('/stores/$storeId/');
-      return Store.fromJson(response.data as Map<String, dynamic>);
+  Future<void> archiveStore({required int storeId}) async {
+    return execute(() async {
+      await _dio.delete('/stores/$storeId/');
     });
   }
 
   Future<Store> restoreStore(int storeId) async {
-    return _execute(() async {
+    return execute(() async {
       final response = await _dio.post('/stores/$storeId/restore/');
       return Store.fromJson(response.data as Map<String, dynamic>);
     });
@@ -175,7 +99,7 @@ class StoreOperations {
     required int storeId,
     required File imageFile,
   }) async {
-    return _execute(() async {
+    return execute(() async {
       final fileName = imageFile.path.split('/').last;
 
       final formData = FormData.fromMap({
@@ -195,7 +119,7 @@ class StoreOperations {
   }
 
   Future<Store> deleteBanner(int storeId) async {
-    return _execute(() async {
+    return execute(() async {
       final response = await _dio.delete('/stores/$storeId/banner/');
       return Store.fromJson(response.data as Map<String, dynamic>);
     });
@@ -205,7 +129,7 @@ class StoreOperations {
     required int storeId,
     required File imageFile,
   }) async {
-    return _execute(() async {
+    return execute(() async {
       final fileName = imageFile.path.split('/').last;
 
       final formData = FormData.fromMap({
@@ -222,14 +146,14 @@ class StoreOperations {
   }
 
   Future<Store> deleteLogo(int storeId) async {
-    return _execute(() async {
+    return execute(() async {
       final response = await _dio.delete('/stores/$storeId/logo/');
       return Store.fromJson(response.data as Map<String, dynamic>);
     });
   }
 
   Future<List<StoreMember>> getStoreMembers(int storeId) async {
-    return _execute(() async {
+    return execute(() async {
       final response = await _dio.get('/stores/$storeId/members/');
       final List data = response.data as List;
       return data
@@ -242,7 +166,7 @@ class StoreOperations {
     required int storeId,
     required String email,
   }) async {
-    return _execute(() async {
+    return execute(() async {
       final response = await _dio.post(
         '/stores/$storeId/members/',
         data: {'email': email},
@@ -252,13 +176,12 @@ class StoreOperations {
     });
   }
 
-  Future<Map<String, dynamic>> removeStoreMember({
+  Future<void> removeMember({
     required int storeId,
     required int memberId,
   }) async {
-    return _execute(() async {
-      final response = await _dio.delete('/stores/$storeId/members/$memberId/');
-      return response.data as Map<String, dynamic>;
+    return execute(() async {
+      await _dio.delete('/stores/$storeId/members/$memberId/');
     });
   }
 
@@ -266,7 +189,7 @@ class StoreOperations {
     required int storeId,
     required int memberId,
   }) async {
-    return _execute(() async {
+    return execute(() async {
       final response = await _dio.post(
         '/stores/$storeId/transfer-ownership/',
         data: {'member_id': memberId},

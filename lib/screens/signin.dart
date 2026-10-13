@@ -237,6 +237,7 @@ class _SigninState extends State<Signin> {
                       return null;
                     },
                   ),
+                  SizedBox(height: 16),
                 ],
               ),
             ),
@@ -419,6 +420,10 @@ class _TextInput extends StatelessWidget {
           maxLengthEnforcement: MaxLengthEnforcement.enforced,
           decoration: InputDecoration(
             hintText: hint,
+            helperText: ' ',
+            helperStyle: const TextStyle(height: 1),
+            errorMaxLines: 1,
+            errorStyle: const TextStyle(height: 1),
             counterText: '',
             filled: true,
             fillColor: colors.surfaceContainerHighest,
