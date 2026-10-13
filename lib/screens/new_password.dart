@@ -17,6 +17,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
 
   bool _resetting = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -159,7 +160,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _confirmController,
-                    obscureText: true,
+                    obscureText: _obscureConfirmPassword,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     maxLength: 128,
                     maxLengthEnforcement: MaxLengthEnforcement.enforced,
@@ -188,7 +189,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                       focusedBorder: blackBorder,
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword
+                          _obscureConfirmPassword
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
                           color: Colors.black,
@@ -196,7 +197,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                         ),
                         onPressed: () {
                           setState(() {
-                            _obscurePassword = !_obscurePassword;
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
                           });
                         },
                       ),
