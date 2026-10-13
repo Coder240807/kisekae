@@ -121,7 +121,11 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     }
 
     setState(() => _loading = true);
-    final response = await EmailAuth().verifyOtp(widget.email, otp, purpose: "verify_email");
+    final response = await EmailAuth().verifyOtp(
+      widget.email,
+      otp,
+      purpose: "verify_email",
+    );
     if (!mounted) return;
     setState(() => _loading = false);
 
@@ -257,6 +261,10 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                         onChanged: (value) => _onChanged(value, index),
                         decoration: InputDecoration(
                           counterText: '',
+                          helperText: ' ',
+                          helperStyle: const TextStyle(height: 1),
+                          errorMaxLines: 1,
+                          errorStyle: const TextStyle(height: 1),
                           filled: true,
                           fillColor: const Color(0xFFEEE0E2),
                           border: OutlineInputBorder(

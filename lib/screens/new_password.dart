@@ -125,6 +125,10 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                     },
                     decoration: InputDecoration(
                       hintText: "Enter your new password",
+                      helperText: ' ',
+                      helperStyle: const TextStyle(height: 1),
+                      errorMaxLines: 1,
+                      errorStyle: const TextStyle(height: 1),
                       counterText: '',
                       filled: true,
                       fillColor: colors.surfaceContainerHighest,
@@ -172,6 +176,10 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                     },
                     decoration: InputDecoration(
                       hintText: "Confirm your password",
+                      helperText: ' ',
+                      helperStyle: const TextStyle(height: 1),
+                      errorMaxLines: 1,
+                      errorStyle: const TextStyle(height: 1),
                       counterText: '',
                       filled: true,
                       fillColor: colors.surfaceContainerHighest,

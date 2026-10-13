@@ -254,6 +254,10 @@ class _PasswordOTPState extends State<PasswordOTP> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     onChanged: (value) => _onChanged(value, index),
                     decoration: InputDecoration(
+                      helperText: ' ',
+                      helperStyle: const TextStyle(height: 1),
+                      errorMaxLines: 1,
+                      errorStyle: const TextStyle(height: 1),
                       counterText: "",
                       filled: true,
                       fillColor: colors.surfaceContainerHighest,

@@ -3,8 +3,6 @@ import 'package:kisekae/screens/getting_started.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kisekae/screens/onboarding_screen.dart';
 import 'package:kisekae/services/dio.dart';
-import 'package:kisekae/services/storage.dart';
-import 'package:kisekae/services/store.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,19 +10,11 @@ void main() async {
 
   await DioClient.init();
 
-  final tokenStorage = TokenStorage();
-
-  final storeOperations = StoreOperations(
-    getToken: () => tokenStorage.readAccessToken(),
-  );
-
-  runApp(MyApp(storeOperations: storeOperations));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key, required this.storeOperations});
-
-  final StoreOperations storeOperations;
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
