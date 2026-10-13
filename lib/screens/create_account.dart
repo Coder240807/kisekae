@@ -22,6 +22,7 @@ class _CreateAccountState extends State<CreateAccount> {
       TextEditingController();
 
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _loading = false;
   bool _isOauthLoading = false;
 
@@ -209,7 +210,7 @@ class _CreateAccountState extends State<CreateAccount> {
                       return null;
                     },
                   ),
-                  SizedBox(height: size.height * 0.015),
+                  SizedBox(height: size.height * 0.012),
 
                   _inputField(
                     label: 'Email',
@@ -235,7 +236,7 @@ class _CreateAccountState extends State<CreateAccount> {
                     },
                   ),
 
-                  SizedBox(height: size.height * 0.015),
+                  SizedBox(height: size.height * 0.012),
 
                   _inputField(
                     label: 'Password',
@@ -271,23 +272,23 @@ class _CreateAccountState extends State<CreateAccount> {
                         r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,128}$',
                       );
                       if (!passwordRegex.hasMatch(value)) {
-                        return 'Password must include a letter,\na number, and a special character';
+                        return 'Password must include a letter, a number, and a special character';
                       }
                       return null;
                     },
                   ),
 
-                  SizedBox(height: size.height * 0.015),
+                  SizedBox(height: size.height * 0.012),
 
                   _inputField(
                     label: 'Confirm password',
                     hintText: 'Confirm your password',
                     controller: _confirmPasswordController,
-                    obscureText: true,
+                    obscureText: _obscureConfirmPassword,
                     maxLength: 128,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword
+                        _obscureConfirmPassword
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
                         color: Colors.black,
@@ -295,7 +296,7 @@ class _CreateAccountState extends State<CreateAccount> {
                       ),
                       onPressed: () {
                         setState(() {
-                          _obscurePassword = !_obscurePassword;
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
                         });
                       },
                     ),
@@ -437,6 +438,10 @@ class _CreateAccountState extends State<CreateAccount> {
           maxLengthEnforcement: MaxLengthEnforcement.enforced,
           decoration: InputDecoration(
             hintText: hintText,
+            helperText: ' ',
+            helperStyle: const TextStyle(height: 1),
+            errorMaxLines: 2,
+            errorStyle: const TextStyle(height: 1),
             counterText: '',
             hintStyle: TextStyle(fontSize: size.width * 0.04),
             contentPadding: EdgeInsets.symmetric(
