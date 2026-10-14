@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/getting_started.dart';
+import 'package:kisekae/screens/role.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, this.onThemeChanged});
@@ -29,7 +30,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const GettingStartedScreen()),
+        MaterialPageRoute(builder: (context) => const RoleScreen()),
       );
     }
   }
@@ -37,7 +38,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _skip() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const GettingStartedScreen()),
+      MaterialPageRoute(builder: (context) => const RoleScreen()),
     );
   }
 
