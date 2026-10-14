@@ -7,6 +7,24 @@ import 'package:kisekae/services/helper.dart';
 
 import '../models/store_create.dart';
 
+enum ReportType {
+  sales('sales'),
+  inventory('inventory'),
+  orders('orders');
+
+  final String value;
+  const ReportType(this.value);
+}
+
+enum RevenuePeriod {
+  daily('daily'),
+  weekly('weekly'),
+  monthly('monthly');
+
+  final String value;
+  const RevenuePeriod(this.value);
+}
+
 class StoreOperations extends BaseRepository {
   final Dio _dio;
 
@@ -196,6 +214,156 @@ class StoreOperations extends BaseRepository {
       );
 
       return Store.fromJson(response.data as Map<String, dynamic>);
+    });
+  }
+
+  Future<dynamic> getDashboardAnalytics({
+    required int storeId,
+    DateTime? fromDate,
+    DateTime? toDate,
+  }) async {
+    return execute(() async {
+      final queryParams = <String, dynamic>{};
+
+      if (fromDate != null) {
+        queryParams['from_date'] = _formatDate(fromDate);
+      }
+      if (toDate != null) {
+        queryParams['to_date'] = _formatDate(toDate);
+      }
+
+      final response = await _dio.get(
+        '/stores/$storeId/analytics/dashboard/',
+        queryParameters: queryParams,
+      );
+
+      final body = response.data as Map<String, dynamic>;
+      return body['data'];
+    });
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.year.toString().padLeft(4, '0')}-"
+        "${date.month.toString().padLeft(2, '0')}-"
+        "${date.day.toString().padLeft(2, '0')}";
+  }
+
+  Future<dynamic> getOrderAnalytics({
+    required int storeId,
+    DateTime? fromDate,
+    DateTime? toDate,
+  }) async {
+    return execute(() async {
+      final queryParams = <String, dynamic>{};
+
+      if (fromDate != null) {
+        queryParams['from_date'] = _formatDate(fromDate);
+      }
+      if (toDate != null) {
+        queryParams['to_date'] = _formatDate(toDate);
+      }
+
+      final response = await _dio.get(
+        '/stores/$storeId/analytics/orders/',
+        queryParameters: queryParams,
+      );
+
+      final body = response.data as Map<String, dynamic>;
+      return body['data'];
+    });
+  }
+
+  Future<dynamic> getProductAnalytics({
+    required int storeId,
+    DateTime? fromDate,
+    DateTime? toDate,
+    int? limit,
+    String? sortBy,
+  }) async {
+    return execute(() async {
+      final queryParams = <String, dynamic>{};
+
+      if (fromDate != null) {
+        queryParams['from_date'] = _formatDate(fromDate);
+      }
+      if (toDate != null) {
+        queryParams['to_date'] = _formatDate(toDate);
+      }
+      if (limit != null) {
+        queryParams['limit'] = limit;
+      }
+      if (sortBy != null) {
+        queryParams['sort_by'] = sortBy;
+      }
+
+      final response = await _dio.get(
+        '/stores/$storeId/analytics/products/',
+        queryParameters: queryParams,
+      );
+
+      final body = response.data as Map<String, dynamic>;
+      return body['data'];
+    });
+  }
+
+  Future<List<int>?> downloadReport({
+    required int storeId,
+    required ReportType reportType,
+    DateTime? fromDate,
+    DateTime? toDate,
+    String? savePath,
+    ProgressCallback? onProgress,
+  }) async {
+    return execute(() async {
+      final queryParams = <String, dynamic>{'report_type': reportType.value};
+
+      if (fromDate != null) {
+        queryParams['from_date'] = _formatDate(fromDate);
+      }
+      if (toDate != null) {
+        queryParams['to_date'] = _formatDate(toDate);
+      }
+
+      final endpoint = '/stores/$storeId/analytics/reports/download/';
+
+      if (savePath != null) {
+        await _dio.download(
+          endpoint,
+          savePath,
+          queryParameters: queryParams,
+          onReceiveProgress: onProgress,
+        );
+        return null;
+      }
+    });
+  }
+
+  Future<dynamic> getRevenueAnalytics({
+    required int storeId,
+    DateTime? fromDate,
+    DateTime? toDate,
+    RevenuePeriod? period,
+  }) async {
+    return execute(() async {
+      final queryParams = <String, dynamic>{};
+
+      if (fromDate != null) {
+        queryParams['from_date'] = _formatDate(fromDate);
+      }
+      if (toDate != null) {
+        queryParams['to_date'] = _formatDate(toDate);
+      }
+      if (period != null) {
+        queryParams['period'] = period.value;
+      }
+
+      final response = await _dio.get(
+        '/stores/$storeId/analytics/revenue/',
+        queryParameters: queryParams,
+      );
+
+      final body = response.data as Map<String, dynamic>;
+      return body['data'];
     });
   }
 }
