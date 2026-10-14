@@ -152,6 +152,7 @@ class EmailAuth {
         '/accounts/logout/',
         options: Options(headers: {"Authorization": "Bearer $accessToken"}),
       );
+      await DioClient.clearSession();
       await _tokenStorage.deleteAll();
       return AuthResponse(true, response.data["message"]?.toString() ?? "");
     } on DioException catch (e) {

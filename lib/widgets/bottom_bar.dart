@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/cart.dart';
+import 'package:kisekae/screens/categories.dart';
 import 'package:kisekae/screens/profile.dart';
 
 class BottomBar extends StatefulWidget {
@@ -33,13 +35,28 @@ class _BottomBarState extends State<BottomBar> {
       child: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (i) {
-          if (i == 3) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            );
-          } else if (i == 0) {
-            setState(() => _selectedIndex = i);
+          switch (i) {
+            case 0:
+              setState(() => _selectedIndex = i);
+              break;
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+              );
+              break;
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartScreen()),
+              );
+              break;
+            case 3:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+              break;
           }
         },
         elevation: 0,

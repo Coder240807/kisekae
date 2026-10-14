@@ -67,7 +67,7 @@ class ProductsListScreen extends StatelessWidget {
               child: GridView.count(
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
-                childAspectRatio: 0.82,
+                childAspectRatio: 0.78,
                 children: [
                   _productCard(
                     'Maroon top',
@@ -183,7 +183,7 @@ class ProductsListScreen extends StatelessWidget {
           ),
           Text(
             '₹$price',
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ],
       ),

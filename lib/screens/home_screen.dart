@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:kisekae/screens/getting_started.dart';
 import 'package:kisekae/screens/products_list.dart';
 import 'package:kisekae/screens/search.dart';
-import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/screens/categories.dart';
 import 'package:kisekae/widgets/bottom_bar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,7 +12,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isLoggingOut = false;
 
   @override
   Widget build(BuildContext context) {
@@ -43,13 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        // actions: [
-        //   TextButton.icon(
-        //     onPressed: _logout,
-        //     icon: Icon(Icons.logout),
-        //     label: const Text("Logout"),
-        //   ),
-        // ],
       ),
       body: Padding(
         padding: EdgeInsets.all(16),
@@ -101,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   IconButton(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const ProductsListScreen()),
+                        MaterialPageRoute(builder: (_) => const CategoriesScreen()),
                       );
                     },
                     icon: Icon(Icons.arrow_forward),
@@ -225,32 +216,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: BottomBar(),
     );
-  }
-
-  Future<void> _logout() async {
-    if (_isLoggingOut) return;
-    setState(() => _isLoggingOut = true);
-    try {
-      final response = await EmailAuth().logout();
-      if (!mounted) return;
-      if (response.success) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
-          (route) => false,
-        );
-      }
-      if (response.message.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response.message),
-            backgroundColor: response.success ? Colors.green : Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoggingOut = false);
-    }
   }
 }
 
