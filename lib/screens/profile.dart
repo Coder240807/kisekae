@@ -79,9 +79,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Row(
               children: [
-                Expanded(child: iconChip(Icons.inventory, "Your orders")),
+                Expanded(child: iconChip(Icons.inventory, "Your orders", onTap: () {})),
                 const SizedBox(width: 12),
-                Expanded(child: iconChip(Icons.favorite, "Wishlist")),
+                Expanded(child: iconChip(Icons.favorite, "Wishlist", onTap: () {})),
               ],
             ),
             const SizedBox(height: 12),
@@ -92,10 +92,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Icons.checkroom,
                     "Saved AR looks",
                     iconSize: 24,
+                    onTap: () {},
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: iconChip(Icons.card_giftcard, "Gift cards")),
+                Expanded(child: iconChip(Icons.card_giftcard, "Gift cards", onTap: () {})),
               ],
             ),
             const SizedBox(height: 32),
@@ -107,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            actionChip(Icons.person_outline, "Personal information"),
+            actionChip(Icons.person_outline, "Personal information", onTap: () {}),
             const SizedBox(height: 16),
             actionChip(
               Icons.person_outline,
@@ -119,11 +120,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
             const SizedBox(height: 16),
-            actionChip(Icons.notifications_none, "Notification settings"),
+            actionChip(Icons.notifications_none, "Notification settings", onTap: () {}),
             const SizedBox(height: 16),
-            actionChip(Icons.description_outlined, "Terms & conditions"),
+            actionChip(Icons.description_outlined, "Terms & conditions", onTap: () {}),
             const SizedBox(height: 16),
-            actionChip(Icons.headset_mic_outlined, "Help & support"),
+            actionChip(Icons.headset_mic_outlined, "Help & support", onTap: () {}),
             const SizedBox(height: 16),
             actionChip(
               Icons.meeting_room_outlined,
@@ -137,33 +138,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget iconChip(IconData icon, String label, {double iconSize = 18}) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        color: const Color(0xFFFFF9F2),
-        border: Border.all(color: const Color(0xFFB78876)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: iconSize, color: const Color(0xFF8B2E3E)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF8B2E3E),
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+  Widget iconChip(IconData icon, String label, {double iconSize = 18, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 64,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(26),
+          color: const Color(0xFFFFF9F2),
+          border: Border.all(color: const Color(0xFFB78876)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: iconSize, color: const Color(0xFF8B2E3E)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFF8B2E3E),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

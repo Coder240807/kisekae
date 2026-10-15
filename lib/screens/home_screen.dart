@@ -12,7 +12,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -92,7 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   IconButton(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const CategoriesScreen(),
+                        ),
                       );
                     },
                     icon: Icon(Icons.arrow_forward),
@@ -135,7 +136,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   IconButton(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const ProductsListScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const ProductsListScreen(),
+                        ),
                       );
                     },
                     icon: Icon(Icons.arrow_forward),
@@ -154,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       alignment: Alignment(0, -0.4),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: ProductCard(
                       imageUrl: 'assets/images/clothes/6.jpg',
@@ -198,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       alignment: Alignment(0, -0.75),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: ProductCard(
                       imageUrl: 'assets/images/clothes/9.jpg',
@@ -210,6 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),

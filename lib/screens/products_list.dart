@@ -28,7 +28,7 @@ class ProductsListScreen extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           children: [
             SizedBox(
@@ -67,7 +67,7 @@ class ProductsListScreen extends StatelessWidget {
               child: GridView.count(
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
-                childAspectRatio: 0.78,
+                childAspectRatio: 0.8,
                 children: [
                   _productCard(
                     'Maroon top',
@@ -153,7 +153,7 @@ class ProductsListScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 150,
+            height: 140,
             width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
