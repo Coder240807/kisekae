@@ -1,6 +1,5 @@
 import "package:flutter/material.dart";
 import "package:kisekae/screens/search.dart";
-import "package:kisekae/widgets/bottom_bar.dart";
 
 class SubCategoriesScreen extends StatelessWidget {
   const SubCategoriesScreen({super.key});
@@ -30,7 +29,7 @@ class SubCategoriesScreen extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -122,18 +121,6 @@ class SubCategoriesScreen extends StatelessWidget {
                     'Spotlight Steals',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.arrow_back),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.arrow_forward),
-                      ),
-                    ],
-                  ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -155,18 +142,6 @@ class SubCategoriesScreen extends StatelessWidget {
                     'Shop by brands',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.arrow_back),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.arrow_forward),
-                      ),
-                    ],
-                  ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -185,7 +160,6 @@ class SubCategoriesScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomBar(),
     );
   }
 

@@ -1,8 +1,16 @@
 import "package:flutter/material.dart";
 import "package:kisekae/screens/checkout.dart";
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  int _qty1 = 1;
+  int _qty2 = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +37,7 @@ class CartScreen extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           children: [
             Expanded(
@@ -41,7 +49,9 @@ class CartScreen extends StatelessWidget {
                       image: "assets/images/clothes/4.jpg",
                       size: "M",
                       price: 300,
-                      quantity: 1,
+                      quantity: _qty1,
+                      onIncrement: () => setState(() => _qty1++),
+                      onDecrement: () => setState(() { if (_qty1 > 1) _qty1--; }),
                       alignment: Alignment.topCenter,
                     ),
                     const SizedBox(height: 16),
@@ -50,7 +60,9 @@ class CartScreen extends StatelessWidget {
                       image: "assets/images/clothes/10.jpg",
                       size: "M",
                       price: 271,
-                      quantity: 1,
+                      quantity: _qty2,
+                      onIncrement: () => setState(() => _qty2++),
+                      onDecrement: () => setState(() { if (_qty2 > 1) _qty2--; }),
                       alignment: Alignment.topCenter,
                     ),
                   ],
@@ -111,6 +123,7 @@ class CartScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -123,6 +136,8 @@ class CartScreen extends StatelessWidget {
     required String size,
     required int price,
     required int quantity,
+    required VoidCallback onIncrement,
+    required VoidCallback onDecrement,
     required Alignment alignment,
   }) {
     return Container(
@@ -175,7 +190,7 @@ class CartScreen extends StatelessWidget {
                           IconButton(
                             padding: EdgeInsets.zero,
                             icon: const Icon(Icons.remove, size: 20),
-                            onPressed: () {},
+                            onPressed: onDecrement,
                           ),
                           Text(
                             '$quantity',
@@ -184,7 +199,7 @@ class CartScreen extends StatelessWidget {
                           IconButton(
                             padding: EdgeInsets.zero,
                             icon: const Icon(Icons.add, size: 20),
-                            onPressed: () {},
+                            onPressed: onIncrement,
                           ),
                         ],
                       ),
@@ -202,7 +217,7 @@ class CartScreen extends StatelessWidget {
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Color(0xFF8B2E3E),
-                    padding: EdgeInsets.all(12),
+                    padding: EdgeInsets.all(8),
                     side: const BorderSide(color: Color(0xFF8B2E3E)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -217,7 +232,7 @@ class CartScreen extends StatelessWidget {
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Color(0xFF8B2E3E),
-                    padding: EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(vertical: 8),
                     side: const BorderSide(color: Color(0xFF8B2E3E)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),

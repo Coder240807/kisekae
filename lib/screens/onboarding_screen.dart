@@ -226,10 +226,9 @@ class _Page1 extends StatelessWidget {
             'Try on outfits ,see the fit,\nfeel the confidence -\nbefore you buy.',
             style: textTheme.titleLarge?.copyWith(color: scheme.onSurface),
           ),
-          const SizedBox(height: 20),
           Flexible(
             child: SizedBox(
-              height: size.height * 0.4,
+              height: size.height * 0.425,
               child: Center(
                 child: Image.asset(
                   'assets/images/onboarding1.png',

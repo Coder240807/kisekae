@@ -31,7 +31,7 @@ class CategoriesScreen extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -103,11 +103,12 @@ class CategoriesScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: BottomBar(),
+      bottomNavigationBar: BottomBar(selectedIndex: 1),
     );
   }
 

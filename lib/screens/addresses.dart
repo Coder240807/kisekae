@@ -1,8 +1,15 @@
 import "package:flutter/material.dart";
 import "package:kisekae/screens/new_address.dart";
 
-class AddressesScreen extends StatelessWidget {
+class AddressesScreen extends StatefulWidget {
   const AddressesScreen({super.key});
+
+  @override
+  State<AddressesScreen> createState() => _AddressesScreenState();
+}
+
+class _AddressesScreenState extends State<AddressesScreen> {
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +36,7 @@ class AddressesScreen extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           children: [
             const Align(
@@ -45,6 +52,7 @@ class AddressesScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     addressCard(
+                      index: 0,
                       title: 'Home',
                       name: 'Chetanya Saxena',
                       society: 'ABC Society',
@@ -54,11 +62,11 @@ class AddressesScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     addressCard(
+                      index: 1,
                       title: 'Hostel',
                       name: 'Chetanya Saxena',
                       society: 'Girls hostel',
                       phone: '78965XXXXX',
-                      isSelected: false,
                       onEdit: () {},
                       onDelete: () {},
                     ),
@@ -96,52 +104,60 @@ class AddressesScreen extends StatelessWidget {
   }
 
   Widget addressCard({
+    required int index,
     required String title,
     required String name,
     required String society,
     required String phone,
-    bool isSelected = true,
     VoidCallback? onEdit,
     VoidCallback? onDelete,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF8F0),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isSelected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+    final bool isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF8F0),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isSelected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              const Icon(Icons.edit),
-            ],
-          ),
-          infoRow(Icons.person, name),
-          infoRow(Icons.phone, society),
-          Row(
-            children: [
-              Expanded(child: infoRow(Icons.location_on, phone)),
-              const Icon(Icons.delete),
-            ],
-          ),
-        ],
+                IconButton(onPressed: onEdit, icon: const Icon(Icons.edit)),
+              ],
+            ),
+            infoRow(Icons.person, name),
+            infoRow(Icons.phone, society),
+            Row(
+              children: [
+                Expanded(child: infoRow(Icons.location_on, phone)),
+                IconButton(onPressed: onDelete, icon: const Icon(Icons.delete)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
