@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:kisekae/screens/getting_started.dart';
 import 'package:kisekae/screens/role.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -226,9 +225,10 @@ class _Page1 extends StatelessWidget {
             'Try on outfits ,see the fit,\nfeel the confidence -\nbefore you buy.',
             style: textTheme.titleLarge?.copyWith(color: scheme.onSurface),
           ),
+          const SizedBox(height: 15),
           Flexible(
             child: SizedBox(
-              height: size.height * 0.425,
+              height: size.height * 0.45,
               child: Center(
                 child: Image.asset(
                   'assets/images/onboarding1.png',
