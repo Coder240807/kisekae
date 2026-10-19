@@ -45,13 +45,41 @@ class EmailAuth {
   Future<AuthResponse> signUp(
     String name,
     String email,
-    String password,
-  ) async {
+    String password, {
+    bool isSeller = false,
+  }) async {
     try {
       final response = await dio.post(
         '/accounts/register/',
-        data: {"name": name, "email": email, "password": password},
+        data: {
+          "name": name,
+          "email": email,
+          "password": password,
+          "is_seller": isSeller,
+        },
       );
+      return AuthResponse(
+        true,
+        response.data["message"]?.toString() ?? "",
+        Map<String, dynamic>.from(response.data["data"] ?? {}),
+      );
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      return AuthResponse(
+        false,
+        body is Map
+            ? (body["message"]?.toString() ?? e.message ?? "Network error")
+            : (e.message ?? "Network error"),
+      );
+    } catch (e) {
+      return AuthResponse(false, "Unexpected error: $e");
+    }
+  }
+
+  Future<AuthResponse> becomeSeller() async {
+    try {
+      final response = await dio.post('/accounts/become-seller/');
+
       return AuthResponse(
         true,
         response.data["message"]?.toString() ?? "",

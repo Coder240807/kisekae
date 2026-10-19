@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/services/storage.dart';
 
 class RoleScreen extends StatefulWidget {
   const RoleScreen({super.key});
@@ -10,14 +11,30 @@ class RoleScreen extends StatefulWidget {
 class _RoleScreenState extends State<RoleScreen> {
   String? selectedRole;
 
+  final TokenStorage _tokenStorage = TokenStorage();
+
   void _selectRole(String role) async {
     setState(() {
       selectedRole = role;
     });
 
     await Future.delayed(const Duration(milliseconds: 300));
+
+    final accessToken = await _tokenStorage.readAccessToken();
+    final isLoggedIn = accessToken != null && accessToken.isNotEmpty;
+
     if (!mounted) return;
-    Navigator.pushNamed(context, '/login');
+
+    if (!isLoggedIn) {
+      Navigator.pushNamed(context, '/login', arguments: {'selectedRole': role});
+      return;
+    }
+
+    if (role == 'seller') {
+      Navigator.pushReplacementNamed(context, '/seller-dashboard');
+    } else {
+      Navigator.pushReplacementNamed(context, '/home');
+    }
   }
 
   @override

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/getting_started.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/screens/onboarding_screen.dart';
 import 'package:kisekae/services/dio.dart';
+import 'package:kisekae/services/storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,11 +12,15 @@ void main() async {
 
   await DioClient.init();
 
-  runApp(const MyApp());
+  final token = await TokenStorage().readAccessToken();
+  final bool isLoggedIn = token != null && token.isNotEmpty;
+
+  runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -62,8 +68,13 @@ class _MyAppState extends State<MyApp> {
       darkTheme: ThemeData(colorScheme: _darkScheme),
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
-      routes: {'/login': (context) => const GettingStartedScreen()},
-      home: OnboardingScreen(onThemeChanged: _setDark),
+      routes: {
+        '/login': (context) => const GettingStartedScreen(),
+        '/home': (context) => const HomeScreen(),
+      },
+      home: widget.isLoggedIn
+          ? const HomeScreen()
+          : OnboardingScreen(onThemeChanged: _setDark),
     );
   }
 }

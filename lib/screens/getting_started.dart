@@ -18,6 +18,8 @@ class GettingStartedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     return Theme(
       data: Theme.of(context).copyWith(
@@ -66,7 +68,10 @@ class GettingStartedScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const Signin()),
+                      MaterialPageRoute(
+                        builder: (context) => const Signin(),
+                        settings: RouteSettings(arguments: args),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -95,6 +100,7 @@ class GettingStartedScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const CreateAccount(),
+                        settings: RouteSettings(arguments: args),
                       ),
                     );
                   },
