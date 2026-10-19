@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/product_screen.dart';
 
 class ProductsListScreen extends StatelessWidget {
   const ProductsListScreen({super.key});
+
+  void _openProduct(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProductDetailScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +78,7 @@ class ProductsListScreen extends StatelessWidget {
                 childAspectRatio: 0.8,
                 children: [
                   _productCard(
+                    context,
                     'Maroon top',
                     'assets/images/clothes/10.jpg',
                     Alignment.topCenter,
@@ -77,6 +86,7 @@ class ProductsListScreen extends StatelessWidget {
                     271,
                   ),
                   _productCard(
+                    context,
                     'Green blazer',
                     'assets/images/clothes/6.jpg',
                     Alignment.topCenter,
@@ -84,6 +94,7 @@ class ProductsListScreen extends StatelessWidget {
                     710,
                   ),
                   _productCard(
+                    context,
                     'White top',
                     'assets/images/clothes/1.jpg',
                     Alignment.topCenter,
@@ -91,6 +102,7 @@ class ProductsListScreen extends StatelessWidget {
                     375,
                   ),
                   _productCard(
+                    context,
                     'Denim jacket',
                     'assets/images/clothes/2.jpg',
                     Alignment.topCenter,
@@ -98,6 +110,7 @@ class ProductsListScreen extends StatelessWidget {
                     405,
                   ),
                   _productCard(
+                    context,
                     'White tshirt',
                     'assets/images/clothes/3.jpg',
                     Alignment.topCenter,
@@ -105,6 +118,7 @@ class ProductsListScreen extends StatelessWidget {
                     350,
                   ),
                   _productCard(
+                    context,
                     'Blue tshirt',
                     'assets/images/clothes/4.jpg',
                     Alignment.topCenter,
@@ -140,52 +154,57 @@ class ProductsListScreen extends StatelessWidget {
   }
 
   Widget _productCard(
+    BuildContext context,
     String title,
     String imageUrl,
     Alignment alignment,
     double rating,
     int price,
   ) {
-    return SizedBox(
-      width: 190,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 140,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Color(0xFF8B2E3E)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16.5),
-              child: Image.asset(
-                imageUrl,
-                fit: BoxFit.cover,
-                alignment: alignment,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openProduct(context),
+      child: SizedBox(
+        width: 190,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 150,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Color(0xFF8B2E3E)),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16.5),
+                child: Image.asset(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  alignment: alignment,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 16)),
-              Row(
-                children: [
-                  const Icon(Icons.star, size: 16, color: Colors.amber),
-                  Text('$rating'),
-                ],
-              ),
-            ],
-          ),
-          Text(
-            '₹$price',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 16)),
+                Row(
+                  children: [
+                    const Icon(Icons.star, size: 16, color: Colors.amber),
+                    Text('$rating'),
+                  ],
+                ),
+              ],
+            ),
+            Text(
+              '₹$price',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }

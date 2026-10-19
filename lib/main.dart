@@ -13,31 +13,57 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  void _setDark(bool isDark) {
+    setState(() => _themeMode = isDark ? ThemeMode.dark : ThemeMode.light);
+  }
+
+  static const _lightScheme = ColorScheme(
+    brightness: Brightness.light,
+    primary: Color(0xFF8B2E3E),
+    onPrimary: Color(0xFFFFFFFF),
+    secondary: Color(0xFF6F2532),
+    onSecondary: Color(0xFFFFFFFF),
+    error: Color(0xFFFF2C2C),
+    onError: Color(0xFFEAEAEA),
+    surface: Color(0xFFEEE9E4),
+    onSurface: Color(0xFF09090A),
+    surfaceContainerHighest: Color(0xFFEEE0E2),
+  );
+
+  static const _darkScheme = ColorScheme(
+    brightness: Brightness.dark,
+    primary: Color(0xFFC4566A),
+    onPrimary: Color(0xFFFFFFFF),
+    secondary: Color(0xFFD9798A),
+    onSecondary: Color(0xFF09090A),
+    error: Color(0xFFFF5C5C),
+    onError: Color(0xFF09090A),
+    surface: Color(0xFF121212),
+    onSurface: Color(0xFFEEE9E4),
+    surfaceContainerHighest: Color(0xFF2A2A2C),
+  );
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Kisekae',
-      theme: ThemeData(
-        colorScheme: ColorScheme(
-          brightness: Brightness.light,
-          primary: Color(0xFF8B2E3E),
-          onPrimary: Color(0xFFFFFFFF),
-          secondary: Color(0xFF6F2532),
-          onSecondary: Color(0xFFFFFFFF),
-          error: Color(0xFFFF2C2C),
-          onError: Color(0xFFEAEAEA),
-          surface: Color(0xFFEEE9E4),
-          onSurface: Color(0xFF09090A),
-          surfaceContainerHighest: Color(0XFFEEE0E2),
-        ),
-      ),
+      themeMode: _themeMode,
+      theme: ThemeData(colorScheme: _lightScheme),
+      darkTheme: ThemeData(colorScheme: _darkScheme),
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       routes: {'/login': (context) => const GettingStartedScreen()},
-      home: const OnboardingScreen(),
+      home: OnboardingScreen(onThemeChanged: _setDark),
     );
   }
 }

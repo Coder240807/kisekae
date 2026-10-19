@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kisekae/screens/forgot_password.dart';
 import 'package:kisekae/screens/home_screen.dart';
+import 'package:kisekae/screens/password.dart';
 import 'package:kisekae/screens/signin_otp.dart';
 import 'package:kisekae/screens/verify_code.dart';
 import 'package:kisekae/services/email_auth.dart';
@@ -17,13 +18,24 @@ class Signin extends StatefulWidget {
 class _SigninState extends State<Signin> {
   final _form = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  //final TextEditingController _passwordController = TextEditingController();
 
-  bool _obscurePassword = true;
+  //bool _obscurePassword = true;
   bool _loading = false;
   bool _isOauthLoading = false;
 
-  Future<void> _submitForm() async {
+  void _continue() {
+    if (_isOauthLoading) return;
+    if (_form.currentState!.validate()) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SigninPassword(email: _emailController.text.trim()),
+        ),
+      );
+    }
+  }
+  /*Future<void> _submitForm() async {
     if (_loading || _isOauthLoading) return;
     if (_form.currentState!.validate()) {
       setState(() => _loading = true);
@@ -77,7 +89,7 @@ class _SigninState extends State<Signin> {
         if (mounted) setState(() => _loading = false);
       }
     }
-  }
+  }*/
 
   Future<void> _googleAuth() async {
     if (_loading || _isOauthLoading) return;
@@ -134,7 +146,7 @@ class _SigninState extends State<Signin> {
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
+    //_passwordController.dispose();
     super.dispose();
   }
 
@@ -197,8 +209,8 @@ class _SigninState extends State<Signin> {
                       return null;
                     },
                   ),
-                  SizedBox(height: 16),
-                  _TextInput(
+                  SizedBox(height: size.height * 0.16),
+                  /*_TextInput(
                     label: 'Password',
                     hint: 'Enter your password',
                     controller: _passwordController,
@@ -236,12 +248,12 @@ class _SigninState extends State<Signin> {
                       }
                       return null;
                     },
-                  ),
-                  SizedBox(height: 16),
+                  ),*/
+                  //SizedBox(height: 100),
                 ],
               ),
             ),
-            Align(
+            /*Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
@@ -263,18 +275,18 @@ class _SigninState extends State<Signin> {
                   ),
                 ),
               ),
-            ),
+            ),*/
             SizedBox(
               width: double.infinity,
               height: size.height * 0.065,
               child: FilledButton(
-                onPressed: (_loading || _isOauthLoading) ? null : _submitForm,
+                onPressed: _isOauthLoading ? null : _continue,
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: _loading
+                child: /*_loading
                     ? const SizedBox(
                         height: 20,
                         width: 20,
@@ -283,24 +295,27 @@ class _SigninState extends State<Signin> {
                           color: Colors.white,
                         ),
                       )
-                    : Text(
-                        'SIGN IN',
-                        style: TextStyle(fontSize: size.width * 0.04),
-                      ),
+                    : */ Text(
+                  'SIGN IN',
+                  style: TextStyle(fontSize: size.width * 0.04),
+                ),
               ),
             ),
-            SizedBox(height: size.height * 0.02),
+            SizedBox(height: size.height * 0.1),
             Row(
               children: [
                 Expanded(child: Divider()),
                 SizedBox(width: 8),
-                Text("or", style: TextStyle(fontSize: size.width * 0.04)),
+                Text(
+                  "or signin with",
+                  style: TextStyle(fontSize: size.width * 0.04),
+                ),
                 SizedBox(width: 8),
                 Expanded(child: Divider()),
               ],
             ),
-            SizedBox(height: size.height * 0.02),
-            SizedBox(
+            SizedBox(height: size.height * 0.1),
+            /*SizedBox(
               width: double.infinity,
               height: size.height * 0.065,
               child: OutlinedButton(
@@ -340,14 +355,14 @@ class _SigninState extends State<Signin> {
                 Expanded(child: Divider()),
               ],
             ),
-            SizedBox(height: size.height * 0.03),
+            SizedBox(height: size.height * 0.03),*/
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: (_loading) ? null : _googleAuth,
+                  onTap: _isOauthLoading ? null : _googleAuth,
                   child: CircleAvatar(
-                    radius: 24,
+                    radius: 32,
                     backgroundColor: Colors.white,
                     child: Padding(
                       padding: const EdgeInsets.all(8),
@@ -357,9 +372,9 @@ class _SigninState extends State<Signin> {
                 ),
                 SizedBox(width: 24),
                 GestureDetector(
-                  onTap: (_loading) ? null : _githubAuth,
+                  onTap: _isOauthLoading ? null : _githubAuth,
                   child: CircleAvatar(
-                    radius: 24,
+                    radius: 32,
                     backgroundColor: Colors.white,
                     child: Padding(
                       padding: const EdgeInsets.all(8),

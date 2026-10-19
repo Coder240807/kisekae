@@ -181,7 +181,7 @@ class _CreateAccountState extends State<CreateAccount> {
                 children: [
                   Center(
                     child: Text(
-                      'Enter your details',
+                      'Start your style journey',
 
                       style: TextStyle(fontSize: size.width * 0.04),
                     ),
@@ -371,7 +371,7 @@ class _CreateAccountState extends State<CreateAccount> {
                       GestureDetector(
                         onTap: (_loading) ? null : _googleAuth,
                         child: CircleAvatar(
-                          radius: 24,
+                          radius: 32,
                           backgroundColor: Colors.white,
                           child: Padding(
                             padding: const EdgeInsets.all(8),
@@ -383,7 +383,7 @@ class _CreateAccountState extends State<CreateAccount> {
                       GestureDetector(
                         onTap: (_loading) ? null : _githubAuth,
                         child: CircleAvatar(
-                          radius: 24,
+                          radius: 32,
                           backgroundColor: Colors.white,
                           child: Padding(
                             padding: const EdgeInsets.all(8),
