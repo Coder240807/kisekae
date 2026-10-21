@@ -143,20 +143,11 @@ class _SigninOtpState extends State<SigninOtp> {
       return;
     }
 
-    final otp = int.tryParse(_code);
-    if (otp == null) {
-      setState(() {
-        _hasError = true;
-        _errorText = "Please enter a valid code";
-      });
-      return;
-    }
-
     setState(() => _verifying = true);
     try {
       final response = await EmailAuth().verifyOtp(
         widget.email,
-        otp,
+        _code,
         purpose: "login",
       );
       if (!mounted) return;

@@ -5,12 +5,19 @@ import 'package:flutter/services.dart';
 import 'package:kisekae/screens/dashboard.dart';
 
 import 'package:kisekae/screens/home_screen.dart';
+import 'package:kisekae/screens/seller_start.dart';
 import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/services/storage.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
   final String email;
+  final bool isSeller;
 
-  const VerifyCodeScreen({super.key, required this.email});
+  const VerifyCodeScreen({
+    super.key,
+    required this.email,
+    this.isSeller = false,
+  });
 
   @override
   State<VerifyCodeScreen> createState() => _VerifyCodeScreenState();
@@ -150,29 +157,24 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       return;
     }
 
-    final otp = int.tryParse(_code);
-    if (otp == null) {
-      setState(() {
-        _hasError = true;
-        _errorMessage = 'Invalid verification code';
-      });
-      return;
-    }
+    setState(() {
+      _loading = true;
+      _hasError = false;
+      _errorMessage = '';
+    });
 
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final isSeller = args?['isSeller'] == true;
-
-    setState(() => _loading = true);
     final response = await EmailAuth().verifyOtp(
       widget.email,
-      otp,
-      purpose: "verify_email",
+      _code,
+      purpose: 'verify_email',
     );
     if (!mounted) return;
     setState(() => _loading = false);
 
     if (response.success) {
+      await TokenStorage().saveIsSeller(widget.isSeller);
+      if (!mounted) return;
+
       if (response.message.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -181,12 +183,10 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
           ),
         );
       }
-      Navigator.pushAndRemoveUntil(
+
+      Navigator.pushNamedAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (_) =>
-              isSeller ? const SellerDashboardScreen() : const HomeScreen(),
-        ),
+        widget.isSeller ? '/seller-store' : '/home',
         (route) => false,
       );
     } else {
@@ -196,9 +196,11 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
             ? response.message
             : 'Verification failed. Please try again.';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_errorMessage), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(_errorMessage), backgroundColor: Colors.red),
+        );
     }
   }
 

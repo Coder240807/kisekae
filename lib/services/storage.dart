@@ -2,19 +2,24 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TokenStorage {
-  final FlutterSecureStorage _storage = FlutterSecureStorage();
   static const _accessTokenKey = 'access_token';
+  static const _isSellerKey = 'is_seller';
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<String?> readAccessToken() => _storage.read(key: _accessTokenKey);
 
-  Future<void> write(String accessToken) async {
-    await Future.wait([
-      _storage.write(key: _accessTokenKey, value: accessToken),
-    ]);
-  }
+  Future<void> write(String accessToken) =>
+      _storage.write(key: _accessTokenKey, value: accessToken);
+
+  Future<void> saveIsSeller(bool value) =>
+      _storage.write(key: _isSellerKey, value: value.toString());
+
+  Future<bool> readIsSeller() async =>
+      (await _storage.read(key: _isSellerKey)) == 'true';
 
   Future<void> deleteAll() async {
-    await Future.wait([_storage.delete(key: _accessTokenKey)]);
+    await _storage.delete(key: _accessTokenKey);
+    await _storage.delete(key: _isSellerKey);
   }
 }
 

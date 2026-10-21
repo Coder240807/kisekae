@@ -70,7 +70,8 @@ class StoreOperations extends BaseRepository {
           'contact_phone': contactPhone,
         },
       );
-      return Store.fromJson(response.data as Map<String, dynamic>);
+      final body = response.data as Map<String, dynamic>;
+      return Store.fromJson((body['data'] ?? body) as Map<String, dynamic>);
     });
   }
 

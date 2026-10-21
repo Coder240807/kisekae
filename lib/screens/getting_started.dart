@@ -13,7 +13,9 @@ void redirect() {
 }
 
 class GettingStartedScreen extends StatelessWidget {
-  const GettingStartedScreen({super.key});
+  final bool isSeller;
+
+  const GettingStartedScreen({super.key, this.isSeller = false});
 
   @override
   Widget build(BuildContext context) {
@@ -69,8 +71,7 @@ class GettingStartedScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const Signin(),
-                        settings: RouteSettings(arguments: args),
+                        builder: (context) => Signin(isSeller: isSeller),
                       ),
                     );
                   },
@@ -99,8 +100,7 @@ class GettingStartedScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const CreateAccount(),
-                        settings: RouteSettings(arguments: args),
+                        builder: (context) => CreateAccount(isSeller: isSeller),
                       ),
                     );
                   },

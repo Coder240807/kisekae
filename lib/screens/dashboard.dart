@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:kisekae/screens/add_product.dart';
 import 'package:kisekae/widgets/seller_bottom_bar.dart';
 
 class SellerDashboardScreen extends StatefulWidget {
@@ -85,7 +87,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 ),
               ),
               SizedBox(height: size.height * (12 / 840)),
-              _buildQuickActionsRow(size, colorScheme),
+              _buildQuickActionsRow(context, size, colorScheme),
               SizedBox(height: size.height * (20 / 840)),
               _buildStatsGrid(size, colorScheme),
               SizedBox(height: size.height * (16 / 840)),
@@ -212,33 +214,52 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     );
   }
 
-  Widget _buildQuickActionsRow(Size size, ColorScheme colorScheme) {
+  Widget _buildQuickActionsRow(
+    BuildContext context,
+    Size size,
+    ColorScheme colorScheme,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _buildQuickActionItem(
           size,
           colorScheme,
-          Icons.add_box_outlined,
+          'assets/icons/addproducts.svg',
           'Add\nProducts',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AddProductScreen()),
+            );
+          },
         ),
         _buildQuickActionItem(
           size,
           colorScheme,
-          Icons.inventory_2_outlined,
+          'assets/icons/vieworders.svg',
           'View\nOrders',
+          onTap: () {
+            // Navigate to View Orders screen
+          },
         ),
         _buildQuickActionItem(
           size,
           colorScheme,
-          Icons.align_vertical_bottom_rounded,
+          'assets/icons/analytics.svg',
           'Analytics',
+          onTap: () {
+            // Navigate to Analytics screen
+          },
         ),
         _buildQuickActionItem(
           size,
           colorScheme,
-          Icons.credit_card_outlined,
+          'assets/icons/payment.svg',
           'Payment',
+          onTap: () {
+            // Navigate to Payment screen
+          },
         ),
       ],
     );
@@ -247,35 +268,56 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   Widget _buildQuickActionItem(
     Size size,
     ColorScheme colorScheme,
-    IconData icon,
-    String label,
-  ) {
+    String assetPath,
+    String label, {
+    VoidCallback? onTap,
+  }) {
     final buttonWidth = size.width * (68 / 360);
     final buttonHeight = size.height * (68 / 840);
+    final labelHeight = size.height * (32 / 840);
 
-    return Column(
-      children: [
-        Container(
-          width: buttonWidth,
-          height: buttonHeight,
-          decoration: BoxDecoration(
-            color: _widgetBgColor,
-            borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Container(
+            width: buttonWidth,
+            height: buttonHeight,
+            decoration: BoxDecoration(
+              color: _widgetBgColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                assetPath,
+                width: 26,
+                height: 26,
+                colorFilter: ColorFilter.mode(
+                  colorScheme.primary,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
           ),
-          child: Icon(icon, color: colorScheme.primary, size: 26),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-            height: 1.2,
+          const SizedBox(height: 8),
+          SizedBox(
+            width: buttonWidth,
+            height: labelHeight,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: colorScheme.onSurface,
+                height: 1.2,
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -290,14 +332,14 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               colorScheme,
               'Orders',
               '–',
-              Icons.inventory_2_outlined,
+              'assets/icons/vieworders.svg',
             ),
             _buildStatCard(
               size,
               colorScheme,
               'Visitors',
               '–',
-              Icons.people_outline_rounded,
+              'assets/icons/visitors.svg',
             ),
           ],
         ),
@@ -310,14 +352,14 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               colorScheme,
               'Products',
               '–',
-              Icons.archive_outlined,
+              'assets/icons/products.svg',
             ),
             _buildStatCard(
               size,
               colorScheme,
               'Conversion',
               '–',
-              Icons.bar_chart_rounded,
+              'assets/icons/conversion.svg',
             ),
           ],
         ),
@@ -330,7 +372,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     ColorScheme colorScheme,
     String title,
     String value,
-    IconData icon,
+    String assetPath,
   ) {
     final cardWidth = size.width * (152 / 360);
     final cardHeight = size.height * (88 / 840);
@@ -354,11 +396,19 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 title,
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   color: colorScheme.onSurface,
                 ),
               ),
-              Icon(icon, color: colorScheme.primary, size: 22),
+              SvgPicture.asset(
+                assetPath,
+                width: 22,
+                height: 22,
+                colorFilter: ColorFilter.mode(
+                  colorScheme.primary,
+                  BlendMode.srcIn,
+                ),
+              ),
             ],
           ),
           Text(
