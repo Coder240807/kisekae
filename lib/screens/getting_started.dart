@@ -13,11 +13,15 @@ void redirect() {
 }
 
 class GettingStartedScreen extends StatelessWidget {
-  const GettingStartedScreen({super.key});
+  final bool isSeller;
+
+  const GettingStartedScreen({super.key, this.isSeller = false});
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     return Theme(
       data: Theme.of(context).copyWith(
@@ -66,7 +70,9 @@ class GettingStartedScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const Signin()),
+                      MaterialPageRoute(
+                        builder: (context) => Signin(isSeller: isSeller),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -94,7 +100,7 @@ class GettingStartedScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const CreateAccount(),
+                        builder: (context) => CreateAccount(isSeller: isSeller),
                       ),
                     );
                   },

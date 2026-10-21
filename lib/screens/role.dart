@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/getting_started.dart';
+import 'package:kisekae/services/storage.dart';
 
 class RoleScreen extends StatefulWidget {
   const RoleScreen({super.key});
@@ -10,14 +12,27 @@ class RoleScreen extends StatefulWidget {
 class _RoleScreenState extends State<RoleScreen> {
   String? selectedRole;
 
+  final TokenStorage _tokenStorage = TokenStorage();
+
   void _selectRole(String role) async {
     setState(() {
       selectedRole = role;
     });
 
+    final isSeller = role == 'seller';
+
+    await _tokenStorage.saveIsSeller(isSeller);
+
     await Future.delayed(const Duration(milliseconds: 300));
+
     if (!mounted) return;
-    Navigator.pushNamed(context, '/login');
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GettingStartedScreen(isSeller: isSeller),
+      ),
+    );
   }
 
   @override

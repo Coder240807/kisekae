@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:kisekae/screens/addresses.dart";
 import "package:kisekae/screens/getting_started.dart";
+import "package:kisekae/screens/onboarding_screen.dart";
 import "package:kisekae/services/email_auth.dart";
 
 class ProfileScreen extends StatefulWidget {
@@ -22,7 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (response.success) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
+          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
           (route) => false,
         );
       }
@@ -79,9 +80,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Row(
               children: [
-                Expanded(child: iconChip(Icons.inventory, "Your orders", onTap: () {})),
+                Expanded(
+                  child: iconChip(Icons.inventory, "Your orders", onTap: () {}),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: iconChip(Icons.favorite, "Wishlist", onTap: () {})),
+                Expanded(
+                  child: iconChip(Icons.favorite, "Wishlist", onTap: () {}),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -96,7 +101,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: iconChip(Icons.card_giftcard, "Gift cards", onTap: () {})),
+                Expanded(
+                  child: iconChip(
+                    Icons.card_giftcard,
+                    "Gift cards",
+                    onTap: () {},
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 32),
@@ -108,7 +119,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            actionChip(Icons.person_outline, "Personal information", onTap: () {}),
+            actionChip(
+              Icons.person_outline,
+              "Personal information",
+              onTap: () {},
+            ),
             const SizedBox(height: 16),
             actionChip(
               Icons.person_outline,
@@ -120,11 +135,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
             const SizedBox(height: 16),
-            actionChip(Icons.notifications_none, "Notification settings", onTap: () {}),
+            actionChip(
+              Icons.notifications_none,
+              "Notification settings",
+              onTap: () {},
+            ),
             const SizedBox(height: 16),
-            actionChip(Icons.description_outlined, "Terms & conditions", onTap: () {}),
+            actionChip(
+              Icons.description_outlined,
+              "Terms & conditions",
+              onTap: () {},
+            ),
             const SizedBox(height: 16),
-            actionChip(Icons.headset_mic_outlined, "Help & support", onTap: () {}),
+            actionChip(
+              Icons.headset_mic_outlined,
+              "Help & support",
+              onTap: () {},
+            ),
             const SizedBox(height: 16),
             actionChip(
               Icons.meeting_room_outlined,
@@ -138,7 +165,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget iconChip(IconData icon, String label, {double iconSize = 18, VoidCallback? onTap}) {
+  Widget iconChip(
+    IconData icon,
+    String label, {
+    double iconSize = 18,
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

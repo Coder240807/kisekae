@@ -14,11 +14,15 @@ class EmailAuth {
   final Dio dio = DioClient.dio;
   final TokenStorage _tokenStorage = TokenStorage();
 
-  Future<AuthResponse> signIn(String email, String password) async {
+  Future<AuthResponse> signIn(
+    String email,
+    String password, {
+    bool isSeller = false,
+  }) async {
     try {
       final response = await dio.post(
         '/accounts/login/password/',
-        data: {"email": email, "password": password},
+        data: {"email": email, "password": password, "is_seller": isSeller},
       );
       if (!await _saveToken(response.data)) {
         return AuthResponse(false, "Token missing from body.");
@@ -45,13 +49,41 @@ class EmailAuth {
   Future<AuthResponse> signUp(
     String name,
     String email,
-    String password,
-  ) async {
+    String password, {
+    bool isSeller = false,
+  }) async {
     try {
       final response = await dio.post(
         '/accounts/register/',
-        data: {"name": name, "email": email, "password": password},
+        data: {
+          "name": name,
+          "email": email,
+          "password": password,
+          "is_seller": isSeller,
+        },
       );
+      return AuthResponse(
+        true,
+        response.data["message"]?.toString() ?? "",
+        Map<String, dynamic>.from(response.data["data"] ?? {}),
+      );
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      return AuthResponse(
+        false,
+        body is Map
+            ? (body["message"]?.toString() ?? e.message ?? "Network error")
+            : (e.message ?? "Network error"),
+      );
+    } catch (e) {
+      return AuthResponse(false, "Unexpected error: $e");
+    }
+  }
+
+  Future<AuthResponse> becomeSeller() async {
+    try {
+      final response = await dio.post('/accounts/become-seller/');
+
       return AuthResponse(
         true,
         response.data["message"]?.toString() ?? "",
@@ -76,7 +108,6 @@ class EmailAuth {
         '/accounts/otp/request/',
         data: {"email": email, "purpose": purpose},
       );
-      print(response);
       return AuthResponse(true, response.data["message"]?.toString() ?? "");
     } on DioException catch (e) {
       final body = e.response?.data;
@@ -93,7 +124,7 @@ class EmailAuth {
 
   Future<AuthResponse> verifyOtp(
     String email,
-    int code, {
+    String code, {
     required String purpose,
   }) async {
     try {
@@ -101,11 +132,14 @@ class EmailAuth {
         '/accounts/otp/verify/',
         data: {"email": email, "code": code, "purpose": purpose},
       );
-      if (purpose == "login") {
-        if (!await _saveToken(response.data)) {
-          return AuthResponse(false, "Token missing from body.");
-        }
+
+      final access = response.data?["data"]?["access"];
+      if (access is String && access.isNotEmpty) {
+        await _tokenStorage.write(access);
+      } else if (purpose == "login") {
+        return AuthResponse(false, "Token missing from body.");
       }
+
       return AuthResponse(
         true,
         response.data["message"]?.toString() ?? "",
@@ -145,41 +179,29 @@ class EmailAuth {
   }
 
   Future<AuthResponse> logout() async {
+    var message = '';
     try {
-      final accessToken = await _tokenStorage.readAccessToken();
-
-      final response = await dio.post(
-        '/accounts/logout/',
-        options: Options(headers: {"Authorization": "Bearer $accessToken"}),
-      );
-      await DioClient.clearSession();
-      await _tokenStorage.deleteAll();
-      return AuthResponse(true, response.data["message"]?.toString() ?? "");
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
+      final response = await dio.post('/accounts/logout/');
+      message = response.data?["message"]?.toString() ?? "";
+    } catch (_) {
+    } finally {
+      try {
         await DioClient.clearSession();
-        return AuthResponse(true, "Session already expired.");
-      }
-      final body = e.response?.data;
-      return AuthResponse(
-        false,
-        body is Map
-            ? body["message"].toString()
-            : (e.message ?? "Logout failed"),
-      );
-    } catch (e) {
-      return AuthResponse(false, "Unexpected error: $e");
+      } catch (_) {}
+      await _tokenStorage.deleteAll();
     }
+    return AuthResponse(true, message);
   }
 
   Future<bool> _saveToken(Map<String, dynamic> body) async {
-    final String accessToken = body['data']['access'];
-    if (accessToken.isEmpty) {
-      return false;
-    }
+    final access = body['data']?['access'];
+    if (access is! String || access.isEmpty) return false;
+    await _tokenStorage.write(access);
 
-    await _tokenStorage.write(accessToken);
-
+    final data = body['data'];
+    final user = data is Map ? data['user'] : null;
+    final isSeller = user is Map ? user['is_seller'] : data?['is_seller'];
+    if (isSeller is bool) await _tokenStorage.saveIsSeller(isSeller);
     return true;
   }
 }

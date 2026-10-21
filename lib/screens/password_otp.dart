@@ -121,12 +121,6 @@ class _PasswordOTPState extends State<PasswordOTP> {
       return;
     }
 
-    final otp = int.tryParse(_code);
-    if (otp == null) {
-      setState(() => _hasError = true);
-      return;
-    }
-
     setState(() {
       _hasError = false;
       _verifying = true;
@@ -135,7 +129,7 @@ class _PasswordOTPState extends State<PasswordOTP> {
     try {
       final response = await EmailAuth().verifyOtp(
         widget.email,
-        otp,
+        _code,
         purpose: "password_reset",
       );
       if (!mounted) return;

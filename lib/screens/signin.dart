@@ -9,7 +9,8 @@ import 'package:kisekae/services/email_auth.dart';
 import 'package:kisekae/services/oauth.dart';
 
 class Signin extends StatefulWidget {
-  const Signin({super.key});
+  final bool isSeller;
+  const Signin({super.key, this.isSeller = false});
 
   @override
   State<Signin> createState() => _SigninState();
@@ -30,7 +31,10 @@ class _SigninState extends State<Signin> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => SigninPassword(email: _emailController.text.trim()),
+          builder: (_) => SigninPassword(
+            email: _emailController.text.trim(),
+            isSeller: widget.isSeller,
+          ),
         ),
       );
     }

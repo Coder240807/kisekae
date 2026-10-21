@@ -6,6 +6,7 @@ abstract class BaseRepository {
     try {
       return await request();
     } on DioException catch (e) {
+      print('RESPONSE BODY: ${e.response?.data}');
       if (e.error is ApiException) {
         throw e.error as ApiException;
       }

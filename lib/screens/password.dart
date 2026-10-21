@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kisekae/screens/forgot_password.dart';
 import 'package:kisekae/screens/home_screen.dart';
+import 'package:kisekae/screens/seller_start.dart';
 import 'package:kisekae/screens/signin_otp.dart';
 import 'package:kisekae/screens/verify_code.dart';
 import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/services/storage.dart';
 
 class SigninPassword extends StatefulWidget {
   final String email;
-  const SigninPassword({super.key, required this.email});
+  final bool isSeller;
+  const SigninPassword({super.key, required this.email, this.isSeller = false});
 
   @override
   State<SigninPassword> createState() => _SigninPasswordState();
@@ -34,9 +37,15 @@ class _SigninPasswordState extends State<SigninPassword> {
       if (!mounted) return;
 
       if (response.success) {
+        await TokenStorage().saveIsSeller(widget.isSeller);
+        if (!mounted) return;
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (_) => widget.isSeller
+                ? const StoreSelectionScreen()
+                : const HomeScreen(),
+          ),
           (route) => false,
         );
         return;
@@ -59,7 +68,10 @@ class _SigninPasswordState extends State<SigninPassword> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => VerifyCodeScreen(email: widget.email),
+            builder: (_) => VerifyCodeScreen(
+              email: widget.email,
+              isSeller: widget.isSeller,
+            ),
           ),
         );
         return;

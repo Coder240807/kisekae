@@ -6,7 +6,8 @@ import 'package:kisekae/services/email_auth.dart';
 import 'package:kisekae/services/oauth.dart';
 
 class CreateAccount extends StatefulWidget {
-  const CreateAccount({super.key});
+  final bool isSeller;
+  const CreateAccount({super.key, this.isSeller = false});
 
   @override
   State<CreateAccount> createState() => _CreateAccountState();
@@ -28,6 +29,11 @@ class _CreateAccountState extends State<CreateAccount> {
 
   void _submitForm() async {
     if (_loading || _isOauthLoading) return;
+
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final isSeller = args?['selectedRole'] == 'seller';
+
     if (_form.currentState!.validate()) {
       setState(() => _loading = true);
       try {
@@ -36,6 +42,7 @@ class _CreateAccountState extends State<CreateAccount> {
           _nameController.text.trim(),
           email,
           _passwordController.text,
+          isSeller: widget.isSeller,
         );
         if (!mounted) return;
         if (response.success) {
@@ -56,7 +63,10 @@ class _CreateAccountState extends State<CreateAccount> {
           }
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => VerifyCodeScreen(email: email)),
+            MaterialPageRoute(
+              builder: (_) =>
+                  VerifyCodeScreen(email: email, isSeller: widget.isSeller),
+            ),
           );
           return;
         }
