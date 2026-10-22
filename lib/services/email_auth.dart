@@ -14,15 +14,11 @@ class EmailAuth {
   final Dio dio = DioClient.dio;
   final TokenStorage _tokenStorage = TokenStorage();
 
-  Future<AuthResponse> signIn(
-    String email,
-    String password, {
-    bool isSeller = false,
-  }) async {
+  Future<AuthResponse> signIn(String email, String password) async {
     try {
       final response = await dio.post(
         '/accounts/login/password/',
-        data: {"email": email, "password": password, "is_seller": isSeller},
+        data: {"email": email, "password": password},
       );
       if (!await _saveToken(response.data)) {
         return AuthResponse(false, "Token missing from body.");
@@ -194,14 +190,20 @@ class EmailAuth {
   }
 
   Future<bool> _saveToken(Map<String, dynamic> body) async {
-    final access = body['data']?['access'];
+    final data = body['data'];
+    if (data is! Map) return false;
+
+    final access = data['access'];
     if (access is! String || access.isEmpty) return false;
+
     await _tokenStorage.write(access);
 
-    final data = body['data'];
-    final user = data is Map ? data['user'] : null;
-    final isSeller = user is Map ? user['is_seller'] : data?['is_seller'];
-    if (isSeller is bool) await _tokenStorage.saveIsSeller(isSeller);
+    final user = data['user'];
+    final isSeller = user is Map ? user['is_seller'] : data['is_seller'];
+    if (isSeller is bool) {
+      await _tokenStorage.saveIsSeller(isSeller);
+    }
+
     return true;
   }
 }

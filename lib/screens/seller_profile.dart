@@ -1,0 +1,268 @@
+import 'package:flutter/material.dart';
+import 'package:kisekae/services/dio.dart';
+import 'package:kisekae/services/email_auth.dart';
+
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isLoggingOut = false;
+
+  void _comingSoon(String label) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('$label is not available yet')));
+  }
+
+  void _openTerms() {}
+
+  Future<void> _confirmLogout() async {
+    if (_isLoggingOut) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final cs = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+          backgroundColor: cs.surface,
+          surfaceTintColor: cs.surface,
+          title: Text('Log out?', style: TextStyle(color: cs.onSurface)),
+          content: Text(
+            'You will need to log in again to access your store.',
+            style: TextStyle(color: cs.onSurface),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text('Cancel', style: TextStyle(color: cs.onSurface)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(
+                'Log out',
+                style: TextStyle(
+                  color: cs.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) _logout();
+  }
+
+  Future<void> _logout() async {
+    setState(() => _isLoggingOut = true);
+
+    final response = await EmailAuth().logout();
+    if (!response.success) {
+      await DioClient.clearSession();
+    }
+
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
+  Widget _quickAction(
+    ColorScheme cs, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: cs.surfaceContainerHighest,
+      shape: StadiumBorder(side: BorderSide(color: cs.primary)),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: cs.primary),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: cs.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _settingTile(
+    ColorScheme cs, {
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+    bool isLoading = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: cs.surfaceContainerHighest,
+        shape: StadiumBorder(side: BorderSide(color: cs.primary)),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            height: 48,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Icon(icon, size: 22, color: cs.primary),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: cs.primary,
+                      ),
+                    ),
+                  ),
+                  if (isLoading)
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: cs.primary,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  else
+                    Icon(Icons.arrow_forward, size: 22, color: cs.primary),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    final quickActions = <(IconData, String)>[
+      (Icons.inventory_2_outlined, 'Orders'),
+      (Icons.bookmark, 'Draft'),
+      (Icons.credit_card, 'Payment'),
+      (Icons.bar_chart, 'Analytics'),
+      (Icons.storefront, 'Store Information'),
+      (Icons.groups, 'Team Access'),
+    ];
+
+    return Scaffold(
+      backgroundColor: cs.surface,
+      appBar: AppBar(
+        backgroundColor: cs.surface,
+        surfaceTintColor: cs.surface,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: cs.onSurface, width: 2),
+            ),
+            child: Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: cs.onSurface,
+            ),
+          ),
+        ),
+        centerTitle: true,
+        title: Text(
+          'Profile',
+          style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 3.2,
+                children: [
+                  for (final action in quickActions)
+                    _quickAction(
+                      cs,
+                      icon: action.$1,
+                      label: action.$2,
+                      onTap: () => _comingSoon(action.$2),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Profile settings',
+                style: TextStyle(fontSize: 18, color: cs.onSurface),
+              ),
+              const SizedBox(height: 12),
+              _settingTile(
+                cs,
+                icon: Icons.person,
+                label: 'Business information',
+                onTap: () => _comingSoon('Business information'),
+              ),
+              _settingTile(
+                cs,
+                icon: Icons.notifications,
+                label: 'Notification settings',
+                onTap: () => _comingSoon('Notification settings'),
+              ),
+              _settingTile(
+                cs,
+                icon: Icons.description,
+                label: 'Terms & conditions',
+                onTap: _openTerms,
+              ),
+              _settingTile(
+                cs,
+                icon: Icons.headphones,
+                label: 'Help & support',
+                onTap: () => _comingSoon('Help & support'),
+              ),
+              _settingTile(
+                cs,
+                icon: Icons.logout,
+                label: 'Logout',
+                isLoading: _isLoggingOut,
+                onTap: _isLoggingOut ? null : _confirmLogout,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

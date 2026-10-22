@@ -8,11 +8,14 @@ class Store {
   final String contactEmail;
   final String contactPhone;
   final String status;
+  final bool isBusinessVerified;
   final String myRole;
   final int memberCount;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? archivedAt;
+
+  bool get isApproved => status == 'ACTIVE' && isBusinessVerified;
 
   Store({
     required this.id,
@@ -24,6 +27,7 @@ class Store {
     required this.contactEmail,
     required this.contactPhone,
     required this.status,
+    required this.isBusinessVerified,
     required this.myRole,
     required this.memberCount,
     required this.createdAt,
@@ -33,21 +37,26 @@ class Store {
 
   factory Store.fromJson(Map<String, dynamic> json) {
     return Store(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      slug: json['slug'] as String,
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
       description: json['description'] as String? ?? '',
       logoUrl: json['logo_url'] as String?,
       bannerUrl: json['banner_url'] as String?,
       contactEmail: json['contact_email'] as String? ?? '',
       contactPhone: json['contact_phone'] as String? ?? '',
-      status: json['status'] as String,
-      myRole: json['my_role'] as String,
+      status: json['status'] as String? ?? 'PENDING',
+      isBusinessVerified: json['is_business_verified'] as bool? ?? false,
+      myRole: json['my_role'] as String? ?? '',
       memberCount: json['member_count'] as int? ?? 0,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+          DateTime.now(),
       archivedAt: json['archived_at'] != null
-          ? DateTime.tryParse(json['archived_at'])
+          ? DateTime.tryParse(json['archived_at'].toString())
           : null,
     );
   }
@@ -95,4 +104,3 @@ class StoreUser {
     );
   }
 }
-

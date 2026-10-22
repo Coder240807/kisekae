@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kisekae/models/api_exception.dart';
+import 'package:kisekae/screens/dashboard.dart';
 import 'package:kisekae/services/store_verify.dart';
 
 class VerifyBusinessScreen extends StatefulWidget {
@@ -89,11 +90,12 @@ class _VerifyBusinessScreenState extends State<VerifyBusinessScreen> {
 
     switch (status) {
       case 'APPROVED':
-        Navigator.pushNamedAndRemoveUntil(
+        Navigator.pushAndRemoveUntil(
           context,
-          '/seller-dashboard',
+          MaterialPageRoute(
+            builder: (_) => SellerDashboardScreen(storeId: widget.storeId),
+          ),
           (route) => false,
-          arguments: widget.storeId,
         );
         return;
 
@@ -124,8 +126,14 @@ class _VerifyBusinessScreenState extends State<VerifyBusinessScreen> {
         return;
 
       default:
-        if (_isChecking) setState(() => _isChecking = false);
-        _showMessage('Could not read the verification status');
+        debugPrint(
+          'VERIFY STATUS (treated as not submitted): $data',
+        ); // temporary
+        setState(() {
+          _isChecking = false;
+          _isSubmitted = false;
+          _rejectionReason = null;
+        });
     }
   }
 
@@ -150,8 +158,13 @@ class _VerifyBusinessScreenState extends State<VerifyBusinessScreen> {
       final data = await _storeRepository.getBusinessVerification(
         storeId: widget.storeId,
       );
+      debugPrint('REFRESH RESPONSE: $data');
       if (!mounted) return;
       final status = _statusOf(data);
+      if (status != 'PENDING' && status != 'APPROVED' && status != 'REJECTED') {
+        _showMessage('Could not read the verification status');
+        return;
+      }
       _applyStatus(data);
       if (status == 'PENDING') {
         _showMessage('Your verification is still under review');
@@ -159,7 +172,8 @@ class _VerifyBusinessScreenState extends State<VerifyBusinessScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       _showMessage(e.message);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('REFRESH ERROR: $e\n$st');
       if (!mounted) return;
       _showMessage('Something went wrong. Please try again');
     } finally {

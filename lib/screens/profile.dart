@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:kisekae/screens/addresses.dart";
 import "package:kisekae/screens/getting_started.dart";
 import "package:kisekae/screens/onboarding_screen.dart";
+import "package:kisekae/screens/terms_conditions.dart";
 import "package:kisekae/services/email_auth.dart";
 
 class ProfileScreen extends StatefulWidget {
@@ -144,7 +145,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             actionChip(
               Icons.description_outlined,
               "Terms & conditions",
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TermsScreen()),
+                );
+              },
             ),
             const SizedBox(height: 16),
             actionChip(

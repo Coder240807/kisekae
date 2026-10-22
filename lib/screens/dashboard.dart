@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:kisekae/screens/add_product.dart';
+import 'package:kisekae/screens/store_order.dart';
 import 'package:kisekae/widgets/seller_bottom_bar.dart';
 
 class SellerDashboardScreen extends StatefulWidget {
-  const SellerDashboardScreen({super.key});
+  final int storeId;
+
+  const SellerDashboardScreen({super.key, required this.storeId});
 
   @override
   State<SellerDashboardScreen> createState() => _SellerDashboardScreenState();
@@ -240,7 +243,12 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           'assets/icons/vieworders.svg',
           'View\nOrders',
           onTap: () {
-            // Navigate to View Orders screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OrdersScreen(storeId: widget.storeId),
+              ),
+            );
           },
         ),
         _buildQuickActionItem(

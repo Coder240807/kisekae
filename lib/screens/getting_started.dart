@@ -3,15 +3,6 @@ import 'package:kisekae/screens/create_account.dart';
 import 'package:kisekae/screens/signin.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-void redirect() {
-  navigatorKey.currentState?.pushNamedAndRemoveUntil(
-    '/login',
-    (route) => false,
-  );
-}
-
 class GettingStartedScreen extends StatelessWidget {
   final bool isSeller;
 

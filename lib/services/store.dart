@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:kisekae/models/store_member.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/helper.dart';
@@ -38,19 +39,35 @@ class StoreOperations extends BaseRepository {
     String? status,
   }) async {
     return execute(() async {
-      final queryParams = <String, dynamic>{
-        'include_archived': ?includeArchived,
-        'page': ?page,
-        'page_size': ?pageSize,
-        'role': ?role,
-        'status': ?status,
-      };
+      final Map<String, dynamic> queryParams = {};
+
+      if (includeArchived != null) {
+        queryParams['include_archived'] = includeArchived;
+      }
+      if (page != null) queryParams['page'] = page;
+      if (pageSize != null) queryParams['page_size'] = pageSize;
+      if (role != null && role.isNotEmpty) queryParams['role'] = role;
+      if (status != null && status.isNotEmpty) queryParams['status'] = status;
 
       final response = await _dio.get('/stores/', queryParameters: queryParams);
 
-      return PaginatedStoreResponse.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      debugPrint('GET STORES RAW: ${response.data}'); // temporary
+
+      final body = response.data;
+      Map<String, dynamic> payload;
+      if (body is Map<String, dynamic>) {
+        final inner = body['data'];
+        if (inner is Map<String, dynamic>) {
+          payload = inner;
+        } else if (inner is List) {
+          payload = {'count': inner.length, 'results': inner};
+        } else {
+          payload = body;
+        }
+      } else {
+        payload = {'count': 0, 'results': <dynamic>[]};
+      }
+      return PaginatedStoreResponse.fromJson(payload);
     });
   }
 
