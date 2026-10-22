@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:kisekae/screens/dashboard.dart';
-import 'package:kisekae/screens/getting_started.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+import 'package:kisekae/screens/getting_started.dart';
 import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/screens/onboarding_screen.dart';
 import 'package:kisekae/screens/seller_start.dart';
+import 'package:kisekae/screens/sellergate_screen.dart';
+
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/storage.dart';
 
@@ -72,8 +74,8 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       routes: {
+        '/onboarding': (context) => OnboardingScreen(onThemeChanged: _setDark),
         '/seller-store': (context) => const StoreSelectionScreen(),
-        '/seller-dashboard': (context) => const SellerDashboardScreen(),
         '/login': (context) => const GettingStartedScreen(),
         '/home': (context) => const HomeScreen(),
       },
@@ -83,6 +85,7 @@ class _MyAppState extends State<MyApp> {
 
   Widget _startScreen() {
     if (!widget.isLoggedIn) return OnboardingScreen(onThemeChanged: _setDark);
-    return widget.isSeller ? const SellerDashboardScreen() : const HomeScreen();
+
+    return widget.isSeller ? const SellerGateScreen() : const HomeScreen();
   }
 }

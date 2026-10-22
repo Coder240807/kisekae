@@ -2,9 +2,17 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/services/storage.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+class _RefreshResult {
+  final String? token;
+  const _RefreshResult(this.token);
+}
 
 class DioClient {
   DioClient._();
@@ -12,7 +20,7 @@ class DioClient {
   static late final Dio dio;
   static late final PersistCookieJar cookieJar;
   static bool _initialized = false;
-  static Future<String?>? _refreshing;
+  static Future<_RefreshResult>? _refreshing;
 
   static const _refreshPath = '/accounts/token/refresh/';
   static const _noRefreshPaths = [
@@ -28,13 +36,14 @@ class DioClient {
     'Accept': 'application/json',
   };
 
+  static BaseOptions _baseOptions() =>
+      BaseOptions(baseUrl: dotenv.get('BASE_URL'), headers: _jsonHeaders);
+
   static Future<void> init() async {
     if (_initialized) return;
 
     cookieJar = PersistCookieJar(storage: CookieStorage());
-    dio = Dio(
-      BaseOptions(baseUrl: dotenv.get('BASE_URL'), headers: _jsonHeaders),
-    );
+    dio = Dio(_baseOptions());
 
     dio.interceptors.addAll([
       CookieManager(cookieJar),
@@ -47,10 +56,25 @@ class DioClient {
           return handler.next(options);
         },
         onError: (DioException error, ErrorInterceptorHandler handler) async {
-          var currentError = error;
           final options = error.requestOptions;
-
           final isUnauthorized = error.response?.statusCode == 401;
+          final hadAuth = options.headers.containsKey('Authorization');
+          final skipRefresh =
+              _noRefreshPaths.any(options.path.contains) ||
+              options.extra['retried'] == true;
+
+          if (isUnauthorized && hadAuth && !skipRefresh) {
+            final result = await _refreshAccessToken();
+            if (result.token != null) {
+              options.headers['Authorization'] = 'Bearer ${result.token}';
+              options.extra['retried'] = true;
+              try {
+                return handler.resolve(await dio.fetch(options));
+              } on DioException catch (retryError) {
+                return handler.next(retryError);
+              }
+            }
+          }
 
           if (kDebugMode && !options.path.contains('/accounts/')) {
             debugPrint(
@@ -59,39 +83,15 @@ class DioClient {
               'got: ${error.response?.data}',
             );
           }
-          final skipRefresh =
-              _noRefreshPaths.any(options.path.contains) ||
-              options.extra['retried'] == true;
 
-          if (isUnauthorized && !skipRefresh) {
-            final newToken = await _refreshAccessToken();
-            if (newToken != null) {
-              options.headers['Authorization'] = 'Bearer $newToken';
-              options.extra['retried'] = true;
-              try {
-                final response = await dio.fetch(options);
-                return handler.resolve(response);
-              } on DioException catch (retryError) {
-                currentError = retryError;
-              }
-            } else {
-              print("Session Expired. Logging Out...");
-              await clearSession();
-            }
-          }
-
-          if (currentError.response?.statusCode == 500) {
-            print("Server Error");
-          }
-
-          final apiException = ApiException.fromDioException(currentError);
-          final customError = DioException(
-            requestOptions: currentError.requestOptions,
-            response: currentError.response,
-            type: currentError.type,
-            error: apiException,
+          return handler.next(
+            DioException(
+              requestOptions: error.requestOptions,
+              response: error.response,
+              type: error.type,
+              error: ApiException.fromDioException(error),
+            ),
           );
-          return handler.next(customError);
         },
       ),
     ]);
@@ -99,28 +99,39 @@ class DioClient {
     _initialized = true;
   }
 
-  static Future<String?> _refreshAccessToken() {
+  static Future<_RefreshResult> _refreshAccessToken() {
     return _refreshing ??= _requestNewAccessToken().whenComplete(
       () => _refreshing = null,
     );
   }
 
-  static Future<String?> _requestNewAccessToken() async {
+  static Future<_RefreshResult> _requestNewAccessToken() async {
     try {
-      final refreshDio = Dio(
-        BaseOptions(baseUrl: dotenv.get('BASE_URL'), headers: _jsonHeaders),
-      );
-      refreshDio.interceptors.add(CookieManager(cookieJar));
-
+      debugPrint('Refreshing access token...');
+      final refreshDio = Dio(_baseOptions())
+        ..interceptors.add(CookieManager(cookieJar));
       final response = await refreshDio.post(_refreshPath);
 
       final access = response.data?['data']?['access'];
       if (access is String && access.isNotEmpty) {
         await TokenStorage().write(access);
-        return access;
+        return _RefreshResult(access);
       }
+      await _expireSession();
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      if (code == 401 || code == 403) await _expireSession();
     } catch (_) {}
-    return null;
+    return const _RefreshResult(null);
+  }
+
+  static Future<void> _expireSession() async {
+    debugPrint('Session expired. Logging out.');
+    await clearSession();
+    navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      '/onboarding',
+      (_) => false,
+    );
   }
 
   static Future<void> clearSession() async {

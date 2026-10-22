@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/helper.dart';
 
@@ -7,13 +8,37 @@ class StoreRepository extends BaseRepository {
 
   StoreRepository([Dio? dio]) : _dio = dio ?? DioClient.dio;
 
+  Map<String, dynamic> _unwrap(dynamic body) {
+    if (body is Map<String, dynamic>) {
+      final inner = body['data'];
+      if (inner is Map<String, dynamic>) return inner;
+      return body;
+    }
+    return <String, dynamic>{};
+  }
+
   Future<Map<String, dynamic>> getBusinessVerification({
     required int storeId,
   }) async {
     return execute(() async {
       final response = await _dio.get('/stores/$storeId/verification/');
+      final data = _unwrap(response.data);
+      if (data.containsKey('status')) return data;
 
-      return response.data as Map<String, dynamic>;
+      final verification = data['verification'];
+      if (verification is Map<String, dynamic>) {
+        return {
+          ...verification,
+          'is_submitted': data['is_submitted'],
+          'is_business_verified': data['is_business_verified'],
+        };
+      }
+
+      return {
+        'status': 'NOT_SUBMITTED',
+        'is_submitted': false,
+        'is_business_verified': data['is_business_verified'] == true,
+      };
     });
   }
 
@@ -36,8 +61,7 @@ class StoreRepository extends BaseRepository {
           'business_email': businessEmail,
         },
       );
-
-      return response.data as Map<String, dynamic>;
+      return _unwrap(response.data);
     });
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/seller_profile.dart';
 
 class SellerBottomBar extends StatelessWidget {
   final int selectedIndex;
@@ -44,7 +45,10 @@ class SellerBottomBar extends StatelessWidget {
             Navigator.pushNamed(context, '/orders');
             break;
           case 3:
-            Navigator.pushNamed(context, '/profile');
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
             break;
         }
       },
