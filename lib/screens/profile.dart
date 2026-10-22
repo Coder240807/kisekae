@@ -2,7 +2,9 @@ import "package:flutter/material.dart";
 import "package:kisekae/screens/addresses.dart";
 import "package:kisekae/screens/getting_started.dart";
 import "package:kisekae/screens/onboarding_screen.dart";
+import "package:kisekae/screens/personal_details.dart";
 import "package:kisekae/screens/terms_conditions.dart";
+import "package:kisekae/screens/wishlist_screen.dart";
 import "package:kisekae/services/email_auth.dart";
 
 class ProfileScreen extends StatefulWidget {
@@ -86,7 +88,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: iconChip(Icons.favorite, "Wishlist", onTap: () {}),
+                  child: iconChip(
+                    Icons.favorite,
+                    "Wishlist",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WishlistScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -123,7 +136,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             actionChip(
               Icons.person_outline,
               "Personal information",
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PersonalInformationScreen(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
             actionChip(
