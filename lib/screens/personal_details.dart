@@ -90,7 +90,6 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     }
   }
 
-  // Deactivation Confirmation Dialog
   Future<void> _showDeactivateConfirmationDialog() async {
     bool isDeactivating = false;
 
@@ -155,7 +154,6 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                             if (!mounted) return;
                             Navigator.pop(dialogContext);
 
-                            // Clear navigation stack and redirect to onboarding screen
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
@@ -311,7 +309,6 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // User Avatar Header Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
@@ -359,7 +356,6 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Inline Editable Full Name Tile
             _buildNameTile(profile.name),
 
             const SizedBox(height: 12),
