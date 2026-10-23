@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:kisekae/screens/addresses.dart";
+import "package:kisekae/screens/myorders_screen.dart";
 import "package:kisekae/screens/onboarding_screen.dart";
 import "package:kisekae/screens/personal_details.dart";
 import "package:kisekae/screens/terms_conditions.dart";
@@ -83,7 +84,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Row(
               children: [
                 Expanded(
-                  child: iconChip(Icons.inventory, "Your orders", onTap: () {}),
+                  child: iconChip(
+                    Icons.inventory,
+                    "Your orders",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MyOrdersScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

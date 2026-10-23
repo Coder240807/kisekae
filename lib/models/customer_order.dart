@@ -223,3 +223,82 @@ class OrderDetail {
     return '';
   }
 }
+
+class OrderTrackingDetail {
+  final int id;
+  final String orderNumber;
+  final String storeName;
+  final String status;
+  final String totalAmount;
+  final String currency;
+  final String? trackingNumber;
+  final String? trackingUrl;
+  final String? deliveredAt;
+  final String createdAt;
+  final String updatedAt;
+  final List<OrderItem> items;
+  final List<OrderStatusHistory> statusHistory;
+
+  OrderTrackingDetail({
+    required this.id,
+    required this.orderNumber,
+    required this.storeName,
+    required this.status,
+    required this.totalAmount,
+    required this.currency,
+    this.trackingNumber,
+    this.trackingUrl,
+    this.deliveredAt,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.items,
+    required this.statusHistory,
+  });
+
+  factory OrderTrackingDetail.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'] as List<dynamic>? ?? [];
+    final rawHistory = json['status_history'] as List<dynamic>? ?? [];
+
+    return OrderTrackingDetail(
+      id: json['id'] as int? ?? 0,
+      orderNumber: json['order_number'] as String? ?? '',
+      storeName: json['store_name'] as String? ?? '',
+      status: json['status'] as String? ?? 'PENDING',
+      totalAmount: json['total_amount']?.toString() ?? '0',
+      currency: json['currency'] as String? ?? 'INR',
+      trackingNumber: json['tracking_number'] as String?,
+      trackingUrl: json['tracking_url'] as String?,
+      deliveredAt: json['delivered_at'] as String?,
+      createdAt: json['created_at'] as String? ?? '',
+      updatedAt: json['updated_at'] as String? ?? '',
+      items: rawItems
+          .map((e) => OrderItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      statusHistory: rawHistory
+          .map(
+            (e) => OrderStatusHistory.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  double get parsedTotalAmount => double.tryParse(totalAmount) ?? 0.0;
+
+  String get currencySymbol {
+    switch (currency.toUpperCase()) {
+      case 'INR':
+        return '₹';
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      default:
+        return currency;
+    }
+  }
+
+  String get formattedTotal =>
+      '$currencySymbol${parsedTotalAmount.toStringAsFixed(0)}';
+}

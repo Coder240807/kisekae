@@ -5,11 +5,13 @@ import 'package:kisekae/models/cart.dart';
 import 'package:kisekae/models/checkout.dart';
 import 'package:kisekae/models/user_address.dart';
 import 'package:kisekae/screens/home_screen.dart';
+import 'package:kisekae/screens/trackorderscreen.dart';
 import 'package:kisekae/services/buyer_address.dart';
 import 'package:kisekae/services/checkout_service.dart';
 
 class _PaymentMethod {
   final String label;
+
   final String? iconAsset;
 
   const _PaymentMethod(this.label, {this.iconAsset});
@@ -203,6 +205,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  void _goToTrackOrder() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            TrackOrderScreen(orderId: _result!.orders.first.orderId),
+      ),
+    );
+  }
+
   void _handleBack() {
     if (_isPlacingOrder) return;
     if (_currentPage == 2) {
@@ -216,8 +227,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       Navigator.pop(context);
     }
   }
-
-  // ---------- UI ----------
 
   @override
   Widget build(BuildContext context) {
@@ -272,9 +281,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     height: 48,
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () {
-                        // TODO: open order tracking screen
-                      },
+                      onPressed: _goToTrackOrder,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: _primaryColor,
                         side: const BorderSide(color: _primaryColor),
@@ -436,7 +443,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // Page 2: payment method
   Widget _buildPaymentPage() {
     return SingleChildScrollView(
       child: Column(
@@ -456,7 +462,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 child: Row(
                   children: [
-                    // Space reserved for the payment icon
                     SizedBox(
                       width: 28,
                       height: 28,
@@ -487,7 +492,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // Page 3: confirmation
   Widget _buildConfirmPage() {
     final orderNumbers =
         _result?.orders

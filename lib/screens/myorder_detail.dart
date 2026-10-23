@@ -18,6 +18,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   OrderDetail? _orderDetail;
   bool _isLoading = true;
+  bool _isCancelling = false;
 
   @override
   void initState() {
@@ -55,6 +56,82 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         );
       }
     }
+  }
+
+  Future<void> _handleCancelOrder() async {
+    if (_orderDetail == null) return;
+
+    // Show Confirmation Dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFFFFF8F0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          "Cancel Order?",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          "Are you sure you want to cancel Order #${_orderDetail!.orderNumber}?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("NO", style: TextStyle(color: Colors.black54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              "YES, CANCEL",
+              style: TextStyle(
+                color: Color(0xFF8B2E3E),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isCancelling = true);
+
+    try {
+      final updatedOrder = await _orderService.cancelOrder(
+        _orderDetail!.id,
+        cancelToken: _cancelToken,
+      );
+
+      if (mounted) {
+        setState(() {
+          _orderDetail = updatedOrder;
+          _isCancelling = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Order has been cancelled successfully."),
+            backgroundColor: Colors.black87,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isCancelling = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel order: ${e.toString()}'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+    }
+  }
+
+  bool _canCancel(String status) {
+    final s = status.toUpperCase();
+    return s == 'PENDING' || s == 'CONFIRMED';
   }
 
   @override
@@ -102,6 +179,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     }
 
     final order = _orderDetail!;
+    final canCancelOrder = _canCancel(order.status);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -131,7 +209,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Ordered Products List Card
+            // Ordered Products Summary Card
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -185,13 +263,28 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     },
                   ),
                   const Divider(height: 24, color: Color(0xFFE5DDD2)),
-                  Text(
-                    "Order Number : ${order.orderNumber}",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Order Number : ${order.orderNumber}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Text(
+                        order.status,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: order.status.toUpperCase() == 'CANCELLED'
+                              ? Colors.red.shade700
+                              : primaryColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -199,7 +292,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
             const SizedBox(height: 16),
 
-            // Track & Cancel Buttons
+            // Track & Cancel Action Buttons
             Row(
               children: [
                 Expanded(
@@ -208,7 +301,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         (order.trackingUrl != null &&
                             order.trackingUrl!.isNotEmpty)
                         ? () {
-                            // Launch order.trackingUrl
+                            // Launch tracking URL
                           }
                         : null,
                     style: OutlinedButton.styleFrom(
@@ -231,24 +324,39 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
-                      // Trigger cancel API call
-                    },
+                    onPressed: (canCancelOrder && !_isCancelling)
+                        ? _handleCancelOrder
+                        : null,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: const BorderSide(color: primaryColor),
+                      side: BorderSide(
+                        color: canCancelOrder ? primaryColor : Colors.black26,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    child: const Text(
-                      "Cancel order",
-                      style: TextStyle(
-                        color: primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
+                    child: _isCancelling
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: primaryColor,
+                            ),
+                          )
+                        : Text(
+                            order.status.toUpperCase() == 'CANCELLED'
+                                ? "Cancelled"
+                                : "Cancel order",
+                            style: TextStyle(
+                              color: canCancelOrder
+                                  ? primaryColor
+                                  : Colors.black38,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                   ),
                 ),
               ],

@@ -52,4 +52,38 @@ class OrderService extends BaseRepository {
       return OrderDetail.fromJson(data);
     });
   }
+
+  Future<OrderDetail> cancelOrder(
+    int orderId, {
+    CancelToken? cancelToken,
+  }) async {
+    return execute(() async {
+      final response = await _dio.post(
+        '/orders/$orderId/cancel/',
+        cancelToken: cancelToken,
+      );
+
+      final body = Map<String, dynamic>.from(response.data as Map);
+      final data = Map<String, dynamic>.from(body['data'] as Map);
+
+      return OrderDetail.fromJson(data);
+    });
+  }
+
+  Future<OrderTrackingDetail> trackOrder(
+    int orderId, {
+    CancelToken? cancelToken,
+  }) async {
+    return execute(() async {
+      final response = await _dio.get(
+        '/orders/$orderId/track/',
+        cancelToken: cancelToken,
+      );
+
+      final body = Map<String, dynamic>.from(response.data as Map);
+      final data = Map<String, dynamic>.from(body['data'] as Map);
+
+      return OrderTrackingDetail.fromJson(data);
+    });
+  }
 }
