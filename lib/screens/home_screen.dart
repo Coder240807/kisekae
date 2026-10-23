@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kisekae/screens/products_list.dart';
 import 'package:kisekae/screens/search.dart';
 import 'package:kisekae/screens/categories.dart';
+import 'package:kisekae/screens/wishlist_screen.dart';
 import 'package:kisekae/widgets/bottom_bar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -12,40 +13,115 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final PageController _brandPageController = PageController(
-    viewportFraction: 0.62,
-    initialPage: 5000,
-  );
-
   final List<String> brandImages = [
     'assets/images/brands/deals1.png',
     'assets/images/brands/deals2.png',
     'assets/images/brands/deals3.png',
   ];
+
+  Widget _searchBar() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const SearchScreen()));
+      },
+      child: Container(
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFBF8F5),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFD3C7B8)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.search, color: Colors.black87, size: 20),
+            SizedBox(width: 8),
+            Text(
+              "EXPLORE YOUR STYLE",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _wishlistButton() {
+    return Material(
+      color: const Color(0xFF8B2E3E),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () {
+          Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const WishlistScreen()));
+        },
+        child: const SizedBox(
+          height: 46,
+          width: 46,
+          child: Icon(Icons.favorite, color: Color(0xFFDBBEC3), size: 22),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 135,
+        automaticallyImplyLeading: false,
+        centerTitle: false,
+        titleSpacing: 16,
         title: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: const Text(
-                "KISEKAE",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF7D2938),
-                  fontFamily: 'serif',
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "KISEKAE",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF7D2938),
+                    fontFamily: 'serif',
+                  ),
                 ),
-              ),
+                IconButton(
+                  onPressed: () {},
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Color(0xFF8B2E3E),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Row(
+              children: [
+                Icon(Icons.place_rounded),
+                Text(
+                  "HOME",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                Icon(Icons.keyboard_arrow_down),
+              ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.place_rounded),
-                const Text("HOME", style: TextStyle(fontSize: 18)),
-                Icon(Icons.keyboard_arrow_down),
+                Expanded(child: _searchBar()),
+                const SizedBox(width: 12),
+                _wishlistButton(),
               ],
             ),
           ],
@@ -58,37 +134,6 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const SearchScreen(),
-                          ),
-                        );
-                      },
-                      label: const Text(
-                        'EXPLORE YOUR STYLE',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      icon: Icon(Icons.search, size: 24, color: Colors.black),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFE8D8C4),
-                        alignment: Alignment.centerLeft,
-                        padding: EdgeInsets.symmetric(
-                          vertical: 10,
-                          horizontal: 16,
-                        ),
-                        side: BorderSide(color: const Color(0xFFB78876)),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 8),
                   Container(
                     width: 370,

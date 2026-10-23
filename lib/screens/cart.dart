@@ -207,8 +207,10 @@ class _CartScreenState extends State<CartScreen> {
       }
 
       if (mounted) {
-        Navigator.of(context)
-            .push(MaterialPageRoute(builder: (_) => const CheckoutScreen()));
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => CheckoutScreen(cart: _cartModel!)),
+        );
+        if (mounted) _fetchCart();
       }
     } catch (e) {
       if (mounted) {
