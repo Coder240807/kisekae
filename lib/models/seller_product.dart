@@ -84,3 +84,28 @@ class PaginatedProductResponse {
     );
   }
 }
+
+class ProductImage {
+  final int id;
+  final String imageUrl;
+  final int order;
+  final DateTime? createdAt;
+
+  ProductImage({
+    required this.id,
+    required this.imageUrl,
+    required this.order,
+    this.createdAt,
+  });
+
+  factory ProductImage.fromJson(Map<String, dynamic> json) {
+    return ProductImage(
+      id: json['id'] as int? ?? 0,
+      imageUrl: json['image_url'] as String? ?? '',
+      order: json['order'] as int? ?? 0,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
+          : null,
+    );
+  }
+}

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:kisekae/models/seller_product.dart';
 import 'package:kisekae/services/dio.dart';
@@ -79,6 +81,8 @@ class HandleProduct extends BaseRepository {
     required int storeId,
     required int productId,
     String? name,
+    String? category,
+    String? color,
     String? description,
     String? price,
     String? compareAtPrice,
@@ -88,18 +92,21 @@ class HandleProduct extends BaseRepository {
     String? status,
   }) async {
     return execute(() async {
+      final payload = <String, dynamic>{};
+      if (name != null) payload['name'] = name;
+      if (category != null) payload['category'] = category;
+      if (color != null) payload['color'] = color;
+      if (description != null) payload['description'] = description;
+      if (price != null) payload['price'] = price;
+      if (compareAtPrice != null) payload['compare_at_price'] = compareAtPrice;
+      if (currency != null) payload['currency'] = currency;
+      if (sku != null) payload['sku'] = sku;
+      if (stock != null) payload['stock'] = stock;
+      if (status != null) payload['status'] = status;
+
       final response = await _dio.patch(
         '/stores/$storeId/products/$productId/',
-        data: {
-          'name': ?name,
-          'description': ?description,
-          'price': ?price,
-          'compare_at_price': ?compareAtPrice,
-          'currency': ?currency,
-          'sku': ?sku,
-          'stock': ?stock,
-          'status': ?status,
-        },
+        data: payload,
       );
 
       return Product.fromJson(response.data as Map<String, dynamic>);
@@ -115,36 +122,123 @@ class HandleProduct extends BaseRepository {
     });
   }
 
-  Future<Product> uploadProductImage({
+  Future<Product> uploadProductPrimaryImage({
     required int storeId,
     required int productId,
-    required String filePath,
-    ProgressCallback? onSendProgress,
+    required File imageFile,
+    CancelToken? cancelToken,
   }) async {
     return execute(() async {
+      final fileName = imageFile.path.split('/').last;
+
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(
-          filePath,
-          filename: filePath.split('/').last,
+          imageFile.path,
+          filename: fileName,
         ),
       });
 
       final response = await _dio.put(
         '/stores/$storeId/products/$productId/image/',
         data: formData,
-        onSendProgress: onSendProgress,
+        cancelToken: cancelToken,
       );
 
-      return Product.fromJson(response.data as Map<String, dynamic>);
+      final body = Map<String, dynamic>.from(response.data as Map);
+      final data = Map<String, dynamic>.from(body['data'] as Map);
+
+      return Product.fromJson(data);
     });
   }
 
-  Future<void> removeProductImage({
+  Future<String> deleteProductPrimaryImage({
     required int storeId,
     required int productId,
+    CancelToken? cancelToken,
   }) async {
     return execute(() async {
-      await _dio.delete('/stores/$storeId/products/$productId/image/');
+      final response = await _dio.delete(
+        '/stores/$storeId/products/$productId/image/',
+        cancelToken: cancelToken,
+      );
+
+      final body = Map<String, dynamic>.from(response.data as Map);
+      return body['message'] as String? ?? 'Primary image removed successfully';
+    });
+  }
+
+  Future<List<ProductImage>> getProductImages({
+    required int storeId,
+    required int productId,
+    CancelToken? cancelToken,
+  }) async {
+    return execute(() async {
+      final response = await _dio.get(
+        '/stores/$storeId/products/$productId/images/',
+        cancelToken: cancelToken,
+      );
+
+      final body = Map<String, dynamic>.from(response.data as Map);
+      final dataList = (body['data'] as List<dynamic>?) ?? [];
+
+      final images = dataList
+          .map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      images.sort((a, b) => a.order.compareTo(b.order));
+
+      return images;
+    });
+  }
+
+  Future<List<ProductImage>> uploadProductImages({
+    required int storeId,
+    required int productId,
+    required List<File> imageFiles,
+    CancelToken? cancelToken,
+  }) async {
+    return execute(() async {
+      final formData = FormData();
+
+      for (final file in imageFiles) {
+        final fileName = file.path.split('/').last;
+        formData.files.add(
+          MapEntry(
+            'images',
+            await MultipartFile.fromFile(file.path, filename: fileName),
+          ),
+        );
+      }
+
+      final response = await _dio.post(
+        '/stores/$storeId/products/$productId/images/',
+        data: formData,
+        cancelToken: cancelToken,
+      );
+
+      final body = Map<String, dynamic>.from(response.data as Map);
+      final dataList = (body['data'] as List<dynamic>?) ?? [];
+
+      return dataList
+          .map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
+          .toList();
+    });
+  }
+
+  Future<bool> deleteProductImage({
+    required int storeId,
+    required int productId,
+    required int imageId,
+    CancelToken? cancelToken,
+  }) async {
+    return execute(() async {
+      final response = await _dio.delete(
+        '/stores/$storeId/products/$productId/images/$imageId/',
+        cancelToken: cancelToken,
+      );
+
+      final body = Map<String, dynamic>.from(response.data as Map);
+      return body['success'] as bool? ?? true;
     });
   }
 }

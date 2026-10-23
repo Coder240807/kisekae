@@ -99,6 +99,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
         ),
       ),
       bottomNavigationBar: SellerBottomBar(
+        storeId: widget.storeId,
         selectedIndex: _currentIndex,
         onItemTapped: (index) {
           setState(() => _currentIndex = index);
