@@ -8,9 +8,12 @@ class AddressService extends BaseRepository {
 
   AddressService([Dio? dio]) : _dio = dio ?? DioClient.dio;
 
-  Future<List<CustomerAddress>> getAddresses() async {
+  Future<List<CustomerAddress>> getAddresses({CancelToken? cancelToken}) async {
     return execute(() async {
-      final response = await _dio.get('/accounts/addresses/');
+      final response = await _dio.get(
+        '/accounts/addresses/',
+        cancelToken: cancelToken,
+      );
 
       final body = Map<String, dynamic>.from(response.data as Map);
       final list = body['data'] as List<dynamic>;

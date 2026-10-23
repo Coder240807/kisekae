@@ -1,4 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:kisekae/models/history.dart';
+import 'package:kisekae/screens/products_list.dart';
+import 'package:kisekae/services/search_service.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -8,180 +12,279 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  final SearchService _productService = SearchService();
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
 
-  List<String> _recentSearches = [
-    'Jacket',
-    'Traditional attire',
-    'Hoodies',
-    'Black top',
-    'Oversized t-shirt',
-  ];
+  CancelToken? _cancelToken;
+  List<SearchHistoryItem> _history = [];
+  bool _isLoadingHistory = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
 
   @override
   void dispose() {
+    _cancelToken?.cancel("SearchScreen disposed");
     _searchController.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 
-  void _submitSearch() {
-    final query = _searchController.text.trim();
+  Future<void> _loadHistory() async {
+    _cancelToken?.cancel("Reloading history");
+    _cancelToken = CancelToken();
+
+    try {
+      final items = await _productService.getSearchHistory(
+        cancelToken: _cancelToken,
+      );
+      // Most recent first
+      items.sort((a, b) {
+        final aDate = a.lastSearchedAt ?? a.createdAt;
+        final bDate = b.lastSearchedAt ?? b.createdAt;
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+        return bDate.compareTo(aDate);
+      });
+      if (!mounted) return;
+      setState(() {
+        _history = items;
+        _isLoadingHistory = false;
+      });
+    } catch (e) {
+      if (!mounted || (e is DioException && CancelToken.isCancel(e))) return;
+      setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  Future<void> _search(String rawQuery) async {
+    final query = rawQuery.trim();
     if (query.isEmpty) return;
-    setState(() {
-      _recentSearches.remove(query);
-      _recentSearches.insert(0, query);
-      _searchController.clear();
-    });
-    _focusNode.unfocus();
+
+    FocusScope.of(context).unfocus();
+    _searchController.text = query;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ProductListScreen(initialQuery: query)),
+    );
+
+    if (mounted) _loadHistory();
   }
 
-  void _removeSearch(String item) {
-    setState(() {
-      _recentSearches.remove(item);
-    });
+  void _removeHistoryItem(SearchHistoryItem item) {
+    setState(() => _history.removeWhere((h) => h.id == item.id));
   }
 
-  void _clearAll() {
-    setState(() {
-      _recentSearches.clear();
-    });
+  void _clearAllHistory() {
+    setState(() => _history = []);
   }
 
   @override
   Widget build(BuildContext context) {
+    const backgroundColor = Color(0xFFEFE8DF);
+    const primaryColor = Color(0xFF8B2E3E);
+
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.transparent,
-              border: Border.all(color: Colors.black, width: 2),
-            ),
-            child: const Icon(Icons.arrow_back_ios_new, size: 18),
-          ),
-        ),
-        centerTitle: true,
-        title: const Text(
-          'Search',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _searchController,
-              focusNode: _focusNode,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _submitSearch(),
-              decoration: InputDecoration(
-                hintText: 'EXPLORE YOUR STYLE',
-                hintStyle: const TextStyle(
-                  color: Colors.black54,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.5,
-                ),
-                prefixIcon: const Icon(Icons.search, size: 24, color: Colors.black),
-                suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _searchController,
-                  builder: (context, value, _) {
-                    if (value.text.isEmpty) return const SizedBox.shrink();
-                    return IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.black54),
-                      onPressed: () {
-                        _searchController.clear();
-                        _focusNode.requestFocus();
-                      },
-                    );
-                  },
-                ),
-                filled: true,
-                fillColor: const Color(0xFFE8D8C4),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFB78876)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFB78876), width: 1.5),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (_recentSearches.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: backgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+
+              // Header
+              SizedBox(
+                height: 48,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    const Text(
-                      'Recent Search',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    ),
-                    GestureDetector(
-                      onTap: _clearAll,
-                      child: const Text(
-                        'Clear All',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFB78876),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.black, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new,
+                            size: 16,
+                            color: Colors.black,
+                          ),
                         ),
+                      ),
+                    ),
+                    const Text(
+                      "Search",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: _recentSearches.map((item) => _inputChip(item)).toList(),
-              ),
-            ] else ...[
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  'No recent searches',
-                  style: TextStyle(fontSize: 14, color: Colors.black45),
+
+              const SizedBox(height: 12),
+
+              // Search bar
+              Container(
+                height: 46,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBF8F5),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFD3C7B8)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, color: Colors.black87, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        textInputAction: TextInputAction.search,
+                        onChanged: (_) => setState(() {}),
+                        onSubmitted: _search,
+                        decoration: const InputDecoration(
+                          hintText: "EXPLORE YOUR STYLE",
+                          hintStyle: TextStyle(
+                            fontSize: 13,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    if (_searchController.text.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                        child: const Icon(
+                          Icons.clear,
+                          color: Colors.black54,
+                          size: 18,
+                        ),
+                      )
+                    else
+                      GestureDetector(
+                        onTap: () {},
+                        child: const Icon(
+                          Icons.camera_alt_outlined,
+                          color: Colors.black87,
+                          size: 20,
+                        ),
+                      ),
+                  ],
                 ),
               ),
+
+              const SizedBox(height: 20),
+
+              Expanded(child: _buildHistorySection(primaryColor)),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _inputChip(String label) {
-    return InputChip(
-      label: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: Colors.black,
+  Widget _buildHistorySection(Color primaryColor) {
+    if (_isLoadingHistory) {
+      return Center(child: CircularProgressIndicator(color: primaryColor));
+    }
+
+    if (_history.isEmpty) {
+      return const Align(
+        alignment: Alignment.topLeft,
+        child: Text(
+          "No recent searches",
+          style: TextStyle(fontSize: 14, color: Colors.black54),
         ),
-      ),
-      deleteIcon: const Icon(Icons.clear),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: const Color(0xFFDBBEC3),
-      side: BorderSide.none,
-      padding: const EdgeInsets.all(12),
-      onDeleted: () => _removeSearch(label),
-      onPressed: () {
-        _searchController.text = label;
-        _focusNode.requestFocus();
-      },
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Recent Search",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: _clearAllHistory,
+              child: Text(
+                "Clear All",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: _history.length,
+            itemBuilder: (context, index) {
+              final item = _history[index];
+              return InkWell(
+                onTap: () => _search(item.query),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.history,
+                        size: 20,
+                        color: Colors.black87,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          item.query,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _removeHistoryItem(item),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Icon(
+                            Icons.close,
+                            size: 18,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
