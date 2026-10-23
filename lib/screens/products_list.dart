@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:kisekae/models/product_detail.dart';
+import 'package:kisekae/screens/filter_screen.dart';
 import 'package:kisekae/services/buyer_product.dart';
 
 import 'package:kisekae/services/wishlist_service.dart';
@@ -22,7 +23,9 @@ class FilterChipData {
 }
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({super.key});
+  final String? initialQuery;
+
+  const ProductListScreen({super.key, this.initialQuery});
 
   @override
   State<ProductListScreen> createState() => _ProductListScreenState();
@@ -51,10 +54,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
   ];
 
   FilterChipData? _selectedFilter;
+  ProductFilters _filters = const ProductFilters();
 
   @override
   void initState() {
     super.initState();
+    final initialQuery = widget.initialQuery?.trim() ?? '';
+    if (initialQuery.isNotEmpty) {
+      _searchQuery = initialQuery;
+      _searchController.text = initialQuery;
+    }
     _fetchProducts();
   }
 
@@ -66,7 +75,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   Future<void> _fetchProducts() async {
-    // Safely cancel any pending network request before starting a new search
     _searchCancelToken?.cancel("New search request initiated");
     _searchCancelToken = CancelToken();
 
@@ -74,10 +82,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
     try {
       final response = await _productService.getProducts(
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
-        ordering: _selectedFilter?.ordering,
+        ordering: _selectedFilter?.ordering ?? _filters.ordering,
         category: _selectedFilter?.category,
         inStock: _selectedFilter?.inStock,
-        maxPrice: _selectedFilter?.maxPrice,
+        size: _filters.size,
+        color: _filters.color,
+        minPrice: _filters.minPrice,
+        maxPrice: _selectedFilter?.maxPrice ?? _filters.maxPrice,
         cancelToken: _searchCancelToken,
       );
 
@@ -89,7 +100,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
       }
     } catch (e) {
       if (e is DioException && e.type == DioExceptionType.cancel) {
-        // Request was cancelled intentionally due to a newer search/filter action
         return;
       }
       if (mounted) {
@@ -234,8 +244,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
               ),
               child: IconButton(
                 icon: const Icon(Icons.tune, color: Colors.black, size: 20),
-                onPressed: () {
-                  // Trigger custom filter bottom sheet
+                onPressed: () async {
+                  FocusScope.of(context).unfocus();
+                  final result = await Navigator.of(context)
+                      .push<ProductFilters>(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              FilterScreen(initialFilters: _filters),
+                        ),
+                      );
+                  if (result == null || !mounted) return;
+                  setState(() => _filters = result);
+                  _fetchProducts();
                 },
               ),
             ),
