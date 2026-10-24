@@ -1,7 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:kisekae/models/api_exception.dart';
+import 'package:kisekae/models/dashboard_model.dart';
 import 'package:kisekae/screens/add_product.dart';
 import 'package:kisekae/screens/store_order.dart';
+import 'package:kisekae/services/analytics.dart';
 import 'package:kisekae/widgets/seller_bottom_bar.dart';
 
 class SellerDashboardScreen extends StatefulWidget {
@@ -17,6 +21,65 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   int _currentIndex = 0;
 
   static const Color _widgetBgColor = Color(0xFFFFF9F2);
+
+  final Analytics _analytics = Analytics();
+  final CancelToken _cancelToken = CancelToken();
+  DashboardMetrics? _metrics;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMetrics();
+  }
+
+  @override
+  void dispose() {
+    _cancelToken.cancel("SellerDashboardScreen disposed");
+    super.dispose();
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _loadMetrics() async {
+    final now = DateTime.now();
+    final from = now.subtract(const Duration(days: 6));
+
+    try {
+      final metrics = await _analytics.getStoreDashboardMetrics(
+        storeId: widget.storeId,
+        fromDate: _formatDate(from),
+        toDate: _formatDate(now),
+        cancelToken: _cancelToken,
+      );
+      if (!mounted) return;
+      setState(() => _metrics = metrics);
+    } catch (e) {
+      if (!mounted || (e is DioException && CancelToken.isCancel(e))) return;
+      final message = e is ApiException
+          ? e.message
+          : 'Could not load dashboard data';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  String _money(double value, String currency) {
+    final number = value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toStringAsFixed(2);
+    final symbol = currency.toUpperCase() == 'INR' ? '₹' : '$currency ';
+    return '$symbol$number';
+  }
+
+  String _display(String Function(DashboardMetrics metrics) pick) {
+    final metrics = _metrics;
+    if (metrics == null || metrics.totalOrders == 0) return '–';
+    return pick(metrics);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -180,8 +243,6 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -204,12 +265,16 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 ),
               ],
             ),
-            Text(
-              '–',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+            Expanded(
+              child: Center(
+                child: Text(
+                  _display((m) => _money(m.totalRevenue, m.currency)),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
               ),
             ),
           ],
@@ -330,6 +395,15 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     );
   }
 
+  Widget _svgIcon(ColorScheme colorScheme, String assetPath) {
+    return SvgPicture.asset(
+      assetPath,
+      width: 22,
+      height: 22,
+      colorFilter: ColorFilter.mode(colorScheme.primary, BlendMode.srcIn),
+    );
+  }
+
   Widget _buildStatsGrid(Size size, ColorScheme colorScheme) {
     return Column(
       children: [
@@ -339,16 +413,16 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             _buildStatCard(
               size,
               colorScheme,
-              'Orders',
-              '–',
-              'assets/icons/vieworders.svg',
+              'Total Orders',
+              _display((m) => m.totalOrders.toString()),
+              _svgIcon(colorScheme, 'assets/icons/vieworders.svg'),
             ),
             _buildStatCard(
               size,
               colorScheme,
-              'Visitors',
-              '–',
-              'assets/icons/visitors.svg',
+              'Units Sold',
+              _display((m) => m.totalUnitsSold.toString()),
+              _svgIcon(colorScheme, 'assets/icons/products.svg'),
             ),
           ],
         ),
@@ -359,16 +433,20 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             _buildStatCard(
               size,
               colorScheme,
-              'Products',
-              '–',
-              'assets/icons/products.svg',
+              'Avg. Order Value',
+              _display((m) => _money(m.averageOrderValue, m.currency)),
+              Icon(
+                Icons.payments_outlined,
+                size: 22,
+                color: colorScheme.primary,
+              ),
             ),
             _buildStatCard(
               size,
               colorScheme,
-              'Conversion',
-              '–',
-              'assets/icons/conversion.svg',
+              'Cancellation Rate',
+              _display((m) => '${m.cancellationRate.toStringAsFixed(1)}%'),
+              Icon(Icons.cancel_outlined, size: 22, color: colorScheme.primary),
             ),
           ],
         ),
@@ -381,7 +459,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     ColorScheme colorScheme,
     String title,
     String value,
-    String assetPath,
+    Widget icon,
   ) {
     final cardWidth = size.width * (152 / 360);
     final cardHeight = size.height * (88 / 840);
@@ -395,37 +473,40 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              icon,
+            ],
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
               ),
-              SvgPicture.asset(
-                assetPath,
-                width: 22,
-                height: 22,
-                colorFilter: ColorFilter.mode(
-                  colorScheme.primary,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ],
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
             ),
           ),
         ],

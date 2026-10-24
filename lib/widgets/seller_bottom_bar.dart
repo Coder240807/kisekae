@@ -60,7 +60,7 @@ class SellerBottomBar extends StatelessWidget {
             );
             break;
           case 3:
-            Navigator.pushReplacement(
+            Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ProfileScreen()),
             );

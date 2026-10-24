@@ -13,8 +13,6 @@ class OrdersScreen extends StatefulWidget {
 }
 
 class _OrdersScreenState extends State<OrdersScreen> {
-  static const _pageSize = 20;
-
   static const _filters = <(String, String?)>[
     ('All', null),
     ('Pending', 'PENDING'),
@@ -22,132 +20,52 @@ class _OrdersScreenState extends State<OrdersScreen> {
     ('Cancelled', 'CANCELLED'),
   ];
 
-  static const _useSampleData = true;
-
-  static final _sampleOrder = OrderItemSummary(
-    id: 1,
-    orderNumber: 'ORD123456',
-    customerName: 'Aditi Sharma',
-    customerEmail: 'aditi@example.com',
-    customerPhone: '9876543210',
-    status: 'DELIVERED',
-    totalAmount: 291,
-    currency: 'INR',
-    itemsCount: 2,
-    createdAt: DateTime(2026, 10, 20),
-    updatedAt: DateTime(2026, 10, 20),
-  );
-
   final _orderRepository = StoreOrderRepository();
-  final _scrollController = ScrollController();
-  final List<OrderItemSummary> _orders = [];
+  List<OrderItemSummary> _orders = [];
 
-  int _page = 1;
   int _requestId = 0;
-  bool _hasMore = true;
-  bool _isLoading = false;
-  bool _isLoadingMore = false;
+  bool _isLoading = true;
   String? _error;
   String? _status;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
-    _loadOrders(reset: true);
+    _loadOrders();
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 300) {
-      _loadOrders();
-    }
-  }
-
-  void _showMessage(String text) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
-  }
-
-  Future<void> _loadOrders({bool reset = false}) async {
-    if (!reset && (_isLoading || _isLoadingMore || !_hasMore)) return;
-
-    if (_useSampleData) {
-      setState(() {
-        _orders
-          ..clear()
-          ..add(_sampleOrder);
-        _error = null;
-        _isLoading = false;
-        _isLoadingMore = false;
-        _hasMore = false;
-      });
-      return;
-    }
-
+  Future<void> _loadOrders() async {
     final requestId = ++_requestId;
     setState(() {
-      if (reset) {
-        _page = 1;
-        _hasMore = true;
-        _error = null;
-        _orders.clear();
-        _isLoading = true;
-        _isLoadingMore = false;
-      } else {
-        _isLoadingMore = true;
-      }
+      _isLoading = true;
+      _error = null;
+      _orders = [];
     });
 
     try {
-      final response = await _orderRepository.getStoreOrders(
+      final orders = await _orderRepository.getStoreOrders(
         storeId: widget.storeId,
-        page: _page,
-        pageSize: _pageSize,
         status: _status,
       );
       if (!mounted || requestId != _requestId) return;
-      setState(() {
-        _orders.addAll(response.results);
-        _hasMore = response.next != null;
-        _page++;
-      });
+      setState(() => _orders = orders);
     } on ApiException catch (e) {
       if (!mounted || requestId != _requestId) return;
-      _handleError(e.message);
+      setState(() => _error = e.message);
     } catch (_) {
       if (!mounted || requestId != _requestId) return;
-      _handleError('Something went wrong. Please try again');
+      setState(() => _error = 'Something went wrong. Please try again');
     } finally {
       if (mounted && requestId == _requestId) {
-        setState(() {
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
+        setState(() => _isLoading = false);
       }
-    }
-  }
-
-  void _handleError(String message) {
-    if (_orders.isEmpty) {
-      setState(() => _error = message);
-    } else {
-      _showMessage(message);
     }
   }
 
   void _selectFilter(String? status) {
     if (status == _status) return;
     _status = status;
-    _loadOrders(reset: true);
+    _loadOrders();
   }
 
   String _formatDate(DateTime value) {
@@ -174,7 +92,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   Widget _filterChip(ColorScheme cs, String label, String? status) {
     final selected = _status == status;
     return Material(
-      color: selected ? cs.primary : cs.surfaceContainerHighest,
+      color: selected ? cs.primary : Colors.transparent,
       shape: StadiumBorder(side: BorderSide(color: cs.primary)),
       child: InkWell(
         customBorder: const StadiumBorder(),
@@ -196,17 +114,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Widget _infoRow(ColorScheme cs, IconData icon, String text, {Color? color}) {
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(top: 6),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: cs.primary),
+          Icon(icon, size: 18, color: cs.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13, color: color ?? cs.onSurface),
+              style: TextStyle(fontSize: 14, color: color ?? cs.onSurface),
             ),
           ),
         ],
@@ -225,18 +143,29 @@ class _OrdersScreenState extends State<OrdersScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1F000000),
+            blurRadius: 6,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 66,
+            height: 66,
             decoration: BoxDecoration(
               color: cs.surface,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.receipt_long, size: 32, color: cs.primary),
+            child: Icon(
+              Icons.shopping_bag_outlined,
+              size: 32,
+              color: cs.primary,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -248,8 +177,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                     color: cs.onSurface,
                   ),
                 ),
@@ -258,7 +187,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   Icons.calendar_today_outlined,
                   _formatDate(order.createdAt),
                 ),
-                _infoRow(cs, Icons.person_outline, order.customerName),
                 _infoRow(
                   cs,
                   Icons.payments_outlined,
@@ -267,7 +195,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 _infoRow(
                   cs,
                   Icons.local_shipping_outlined,
-                  'Status - ${_statusLabel(order.status)}',
+                  'Delivery Status - ${_statusLabel(order.status)}',
                   color: isCancelled ? cs.error : null,
                 ),
               ],
@@ -297,7 +225,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ),
               const SizedBox(height: 16),
               OutlinedButton(
-                onPressed: () => _loadOrders(reset: true),
+                onPressed: _loadOrders,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: cs.primary,
                   side: BorderSide(color: cs.primary),
@@ -320,27 +248,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     }
 
     return ListView.builder(
-      controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      itemCount: _orders.length + (_isLoadingMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index >= _orders.length) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: cs.primary,
-                  strokeWidth: 2,
-                ),
-              ),
-            ),
-          );
-        }
-        return _orderCard(_orders[index], cs);
-      },
+      itemCount: _orders.length,
+      itemBuilder: (context, index) => _orderCard(_orders[index], cs),
     );
   }
 
@@ -392,9 +302,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Recent orders',
-                style: TextStyle(fontSize: 18, color: cs.onSurface),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Recent orders',
+                    style: TextStyle(fontSize: 18, color: cs.onSurface),
+                  ),
+                  GestureDetector(
+                    onTap: () => _selectFilter(null),
+                    child: Text(
+                      'View all',
+                      style: TextStyle(fontSize: 14, color: cs.primary),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(child: _body(cs)),
