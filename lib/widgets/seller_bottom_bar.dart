@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/inventory.dart';
 import 'package:kisekae/screens/seller_profile.dart';
+import 'package:kisekae/screens/store_order.dart';
 
 class SellerBottomBar extends StatelessWidget {
+  final int storeId;
   final int selectedIndex;
   final ValueChanged<int>? onItemTapped;
 
-  const SellerBottomBar({super.key, this.selectedIndex = 0, this.onItemTapped});
+  const SellerBottomBar({
+    super.key,
+    required this.storeId,
+    this.selectedIndex = 0,
+    this.onItemTapped,
+  });
 
   static const Color _barColor = Color(0xFF8B2E3E);
   static const Color _circleColor = Color(0xFFFFF9F2);
@@ -29,7 +37,6 @@ class SellerBottomBar extends StatelessWidget {
       onDestinationSelected: (i) {
         if (onItemTapped != null) {
           onItemTapped!(i);
-          return;
         }
 
         if (i == selectedIndex) return;
@@ -39,10 +46,18 @@ class SellerBottomBar extends StatelessWidget {
             Navigator.popUntil(context, (route) => route.isFirst);
             break;
           case 1:
-            Navigator.pushNamed(context, '/inventory');
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => InventoryScreen(storeId: storeId),
+              ),
+            );
             break;
           case 2:
-            Navigator.pushNamed(context, '/orders');
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => OrdersScreen(storeId: storeId)),
+            );
             break;
           case 3:
             Navigator.push(

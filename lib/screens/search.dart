@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/history.dart';
 import 'package:kisekae/screens/products_list.dart';
 import 'package:kisekae/services/search_service.dart';
@@ -18,6 +19,7 @@ class _SearchScreenState extends State<SearchScreen> {
   CancelToken? _cancelToken;
   List<SearchHistoryItem> _history = [];
   bool _isLoadingHistory = true;
+  bool _isClearing = false;
 
   @override
   void initState() {
@@ -40,7 +42,6 @@ class _SearchScreenState extends State<SearchScreen> {
       final items = await _productService.getSearchHistory(
         cancelToken: _cancelToken,
       );
-      // Most recent first
       items.sort((a, b) {
         final aDate = a.lastSearchedAt ?? a.createdAt;
         final bDate = b.lastSearchedAt ?? b.createdAt;
@@ -74,12 +75,48 @@ class _SearchScreenState extends State<SearchScreen> {
     if (mounted) _loadHistory();
   }
 
-  void _removeHistoryItem(SearchHistoryItem item) {
-    setState(() => _history.removeWhere((h) => h.id == item.id));
+  void _showError(Object e, String fallback) {
+    final message = e is ApiException ? e.message : fallback;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _clearAllHistory() {
-    setState(() => _history = []);
+  Future<void> _removeHistoryItem(SearchHistoryItem item) async {
+    final index = _history.indexWhere((h) => h.id == item.id);
+    if (index == -1) return;
+
+    setState(() => _history.removeAt(index));
+
+    try {
+      await _productService.deleteSearchHistoryItem(item.id);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _history.insert(index.clamp(0, _history.length), item));
+      _showError(e, 'Could not delete search');
+    }
+  }
+
+  Future<void> _clearAllHistory() async {
+    if (_isClearing || _history.isEmpty) return;
+
+    final previous = List<SearchHistoryItem>.from(_history);
+    setState(() {
+      _history = [];
+      _isClearing = true;
+    });
+
+    try {
+      await _productService.clearSearchHistory();
+      if (!mounted) return;
+      setState(() => _isClearing = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _history = previous;
+        _isClearing = false;
+      });
+      _showError(e, 'Could not clear search history');
+    }
   }
 
   @override
@@ -97,7 +134,6 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               const SizedBox(height: 8),
 
-              // Header
               SizedBox(
                 height: 48,
                 child: Stack(
@@ -135,7 +171,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
               const SizedBox(height: 12),
 
-              // Search bar
               Container(
                 height: 46,
                 padding: const EdgeInsets.symmetric(horizontal: 12),

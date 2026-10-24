@@ -29,4 +29,32 @@ class SearchService extends BaseRepository {
           .toList();
     });
   }
+
+  Future<String> deleteSearchHistoryItem(
+    int historyId, {
+    CancelToken? cancelToken,
+  }) async {
+    return execute(() async {
+      final response = await _dio.delete(
+        '/products/search/history/$historyId/',
+        cancelToken: cancelToken,
+      );
+
+      final body = Map<String, dynamic>.from(response.data as Map);
+      return body['message'] as String? ?? 'Search history entry deleted';
+    });
+  }
+
+  Future<String> clearSearchHistory({CancelToken? cancelToken}) async {
+    return execute(() async {
+      final response = await _dio.delete(
+        '/products/search/history/',
+        cancelToken: cancelToken,
+      );
+
+      final body = Map<String, dynamic>.from(response.data as Map);
+      return body['message'] as String? ??
+          'Search history cleared successfully';
+    });
+  }
 }

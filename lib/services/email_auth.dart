@@ -82,17 +82,24 @@ class EmailAuth {
 
       return AuthResponse(
         true,
-        response.data["message"]?.toString() ?? "",
+        response.data["message"]?.toString() ?? "Successfully became a seller",
         Map<String, dynamic>.from(response.data["data"] ?? {}),
       );
     } on DioException catch (e) {
       final body = e.response?.data;
-      return AuthResponse(
-        false,
-        body is Map
-            ? body["message"].toString()
-            : (e.message ?? "Network error"),
-      );
+
+      String errorMessage = "Network error";
+      if (body is Map) {
+        errorMessage =
+            body["message"]?.toString() ??
+            body["error"]?["details"]?.toString() ??
+            e.message ??
+            "Failed to upgrade account";
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        errorMessage = e.message!;
+      }
+
+      return AuthResponse(false, errorMessage);
     } catch (e) {
       return AuthResponse(false, "Unexpected error: $e");
     }
