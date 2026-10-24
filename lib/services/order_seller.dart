@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:kisekae/models/order_details.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/helper.dart';
@@ -8,13 +9,28 @@ class StoreOrderRepository extends BaseRepository {
 
   StoreOrderRepository([Dio? dio]) : _dio = dio ?? DioClient.dio;
 
+  Map<String, dynamic> _dataMap(dynamic body) {
+    if (body is Map) {
+      final inner = body['data'];
+      if (inner is Map) return Map<String, dynamic>.from(inner);
+      return Map<String, dynamic>.from(body);
+    }
+    throw const FormatException('Unexpected response from the server');
+  }
+
+  List<dynamic> _listOf(dynamic body) {
+    final data = body is Map ? (body['data'] ?? body) : body;
+    final raw = data is Map ? data['results'] : data;
+    return raw is List ? raw : const [];
+  }
+
   Future<List<OrderItemSummary>> getStoreOrders({
     required int storeId,
     String? search,
     String? status,
   }) async {
     return execute(() async {
-      final queryParams = <String, dynamic>{};
+      final queryParams = <String, dynamic>{'page_size': 50};
 
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
       if (status != null && status.isNotEmpty) queryParams['status'] = status;
@@ -24,14 +40,11 @@ class StoreOrderRepository extends BaseRepository {
         queryParameters: queryParams,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final list = body['data'] as List<dynamic>? ?? [];
-
-      return list
+      return _listOf(response.data)
+          .whereType<Map>()
           .map(
-            (item) => OrderItemSummary.fromJson(
-              Map<String, dynamic>.from(item as Map),
-            ),
+            (item) =>
+                OrderItemSummary.fromJson(Map<String, dynamic>.from(item)),
           )
           .toList();
     });
@@ -48,10 +61,7 @@ class StoreOrderRepository extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final data = Map<String, dynamic>.from(body['data'] as Map);
-
-      return OrderDetail.fromJson(data);
+      return OrderDetail.fromJson(_dataMap(response.data));
     });
   }
 
@@ -65,11 +75,15 @@ class StoreOrderRepository extends BaseRepository {
     CancelToken? cancelToken,
   }) async {
     return execute(() async {
+      // Empty strings are not sent: an empty tracking_url can fail the
+      // backend's URL validation.
       final payload = <String, dynamic>{
         'status': status.toUpperCase(),
-        if (notes != null) 'notes': notes,
-        if (trackingNumber != null) 'tracking_number': trackingNumber,
-        if (trackingUrl != null) 'tracking_url': trackingUrl,
+        if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+        if (trackingNumber != null && trackingNumber.trim().isNotEmpty)
+          'tracking_number': trackingNumber.trim(),
+        if (trackingUrl != null && trackingUrl.trim().isNotEmpty)
+          'tracking_url': trackingUrl.trim(),
       };
 
       final response = await _dio.patch(
@@ -77,11 +91,10 @@ class StoreOrderRepository extends BaseRepository {
         data: payload,
         cancelToken: cancelToken,
       );
+      debugPrint('ORDER STATUS RAW: ${response.data}'); // temporary
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final data = Map<String, dynamic>.from(body['data'] as Map);
-
-      return OrderDetail.fromJson(data);
+      // The PATCH returns the full updated order in `data`.
+      return OrderDetail.fromJson(_dataMap(response.data));
     });
   }
 }

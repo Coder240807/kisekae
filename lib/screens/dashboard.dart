@@ -299,7 +299,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const AddProductScreen()),
+              MaterialPageRoute(
+                builder: (context) => AddProductScreen(storeId: widget.storeId),
+              ),
             );
           },
         ),

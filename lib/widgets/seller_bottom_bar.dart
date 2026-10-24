@@ -34,37 +34,42 @@ class SellerBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return NavigationBar(
       selectedIndex: selectedIndex,
-      onDestinationSelected: (i) {
+      onDestinationSelected: (i) async {
         if (onItemTapped != null) {
           onItemTapped!(i);
         }
 
         if (i == selectedIndex) return;
 
+        MaterialPageRoute? targetRoute;
+
         switch (i) {
           case 0:
             Navigator.popUntil(context, (route) => route.isFirst);
-            break;
+            return;
           case 1:
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => InventoryScreen(storeId: storeId),
-              ),
+            targetRoute = MaterialPageRoute(
+              builder: (_) => InventoryScreen(storeId: storeId),
             );
             break;
           case 2:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => OrdersScreen(storeId: storeId)),
+            targetRoute = MaterialPageRoute(
+              builder: (_) => OrdersScreen(storeId: storeId),
             );
             break;
           case 3:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            targetRoute = MaterialPageRoute(
+              builder: (_) => const ProfileScreen(),
             );
             break;
+        }
+
+        if (targetRoute != null) {
+          await Navigator.push(context, targetRoute);
+
+          if (onItemTapped != null) {
+            onItemTapped!(selectedIndex);
+          }
         }
       },
       elevation: 0,

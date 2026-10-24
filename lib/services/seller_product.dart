@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:kisekae/models/seller_product.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/helper.dart';
@@ -27,42 +28,40 @@ class HandleProduct extends BaseRepository {
           if (status != null && status.isNotEmpty) 'status': status,
         },
       );
-
-      return PaginatedProductResponse.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      final body = response.data;
+      Map<String, dynamic> payload;
+      if (body is Map<String, dynamic>) {
+        final inner = body['data'];
+        if (inner is Map<String, dynamic>) {
+          payload = inner;
+        } else if (inner is List) {
+          payload = {'count': inner.length, 'results': inner};
+        } else {
+          payload = body;
+        }
+      } else {
+        payload = {'count': 0, 'results': <dynamic>[]};
+      }
+      return PaginatedProductResponse.fromJson(payload);
     });
   }
 
   Future<Product> createProduct({
     required int storeId,
-    required String name,
-    required String price,
-    String? description,
-    String? imageUrl,
-    String? compareAtPrice,
-    String currency = 'INR',
-    String? sku,
-    int stock = 0,
-    String status = 'DRAFT',
+    required CreateProductRequest request,
+    CancelToken? cancelToken,
   }) async {
     return execute(() async {
       final response = await _dio.post(
         '/stores/$storeId/products/',
-        data: {
-          'name': name,
-          'price': price,
-          'description': ?description,
-          'image_url': ?imageUrl,
-          'compare_at_price': ?compareAtPrice,
-          'currency': currency,
-          'sku': ?sku,
-          'stock': stock,
-          'status': status,
-        },
+        data: request.toJson(),
+        cancelToken: cancelToken,
       );
 
-      return Product.fromJson(response.data as Map<String, dynamic>);
+      final body = Map<String, dynamic>.from(response.data as Map);
+      final data = Map<String, dynamic>.from(body['data'] as Map);
+
+      return Product.fromJson(data);
     });
   }
 
@@ -72,8 +71,11 @@ class HandleProduct extends BaseRepository {
   }) async {
     return execute(() async {
       final response = await _dio.get('/stores/$storeId/products/$productId/');
+      debugPrint('PRODUCT DETAIL RAW: ${response.data}'); // temporary
 
-      return Product.fromJson(response.data as Map<String, dynamic>);
+      final body = response.data;
+      final data = body is Map ? (body['data'] ?? body) : body;
+      return Product.fromJson(Map<String, dynamic>.from(data as Map));
     });
   }
 

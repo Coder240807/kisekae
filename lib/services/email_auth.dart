@@ -79,6 +79,11 @@ class EmailAuth {
   Future<AuthResponse> becomeSeller() async {
     try {
       final response = await dio.post('/accounts/become-seller/');
+      final data = response.data?["data"];
+      final access = data is Map ? data["access"] : null;
+      if (access is String && access.isNotEmpty)
+        await _tokenStorage.write(access);
+      await _tokenStorage.saveIsSeller(true);
 
       return AuthResponse(
         true,
