@@ -87,8 +87,6 @@ class HandleProduct extends BaseRepository {
   }) async {
     return execute(() async {
       final response = await _dio.get('/stores/$storeId/products/$productId/');
-      debugPrint('PRODUCT DETAIL RAW: ${response.data}');
-
       return Product.fromJson(_dataMap(response.data)!);
     });
   }

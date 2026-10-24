@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/dashboard_model.dart';
 import 'package:kisekae/screens/add_product.dart';
+import 'package:kisekae/screens/analytics_screen.dart';
 import 'package:kisekae/screens/store_order.dart';
 import 'package:kisekae/services/analytics.dart';
 import 'package:kisekae/widgets/seller_bottom_bar.dart';
@@ -94,7 +95,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        toolbarHeight: 70,
+        toolbarHeight: 50,
         automaticallyImplyLeading: false,
         title: Column(
           children: [
@@ -109,14 +110,6 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   fontFamily: 'serif',
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: const [
-                Icon(Icons.place_rounded),
-                Text("HOME", style: TextStyle(fontSize: 18)),
-                Icon(Icons.keyboard_arrow_down),
-              ],
             ),
           ],
         ),
@@ -175,11 +168,6 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     final bannerWidth = size.width * (320 / 360);
     final bannerHeight = size.height * (182 / 840);
 
-    final buttonWidth = size.width * (123 / 360);
-    final buttonHeight = size.height * (48 / 840);
-    final buttonTop = size.height * (120 / 840);
-    final buttonLeft = size.width * (173 / 360);
-
     return Center(
       child: Container(
         width: bannerWidth,
@@ -197,30 +185,6 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
-              ),
-            ),
-            Positioned(
-              top: buttonTop,
-              left: buttonLeft,
-              child: SizedBox(
-                width: buttonWidth,
-                height: buttonHeight,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    elevation: 0,
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'View Store',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
               ),
             ),
           ],
@@ -253,14 +217,6 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                     fontSize: 18,
                     fontWeight: FontWeight.w400,
                     color: colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  'Last 7 days',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -325,16 +281,12 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           'assets/icons/analytics.svg',
           'Analytics',
           onTap: () {
-            // Navigate to Analytics screen
-          },
-        ),
-        _buildQuickActionItem(
-          size,
-          colorScheme,
-          'assets/icons/payment.svg',
-          'Payment',
-          onTap: () {
-            // Navigate to Payment screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AnalyticsScreen(storeId: widget.storeId),
+              ),
+            );
           },
         ),
       ],

@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:kisekae/models/dashboard_model.dart';
@@ -31,7 +30,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Fetch both KPI metrics and time-series revenue in parallel
       final results = await Future.wait([
         _analyticsService.getStoreDashboardMetrics(storeId: widget.storeId),
         _analyticsService.getStoreRevenueAnalytics(
@@ -48,12 +46,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         });
       }
     } catch (e) {
-      if (mounted && e is! DioException) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load analytics: ${e.toString()}')),
-        );
-      }
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load analytics: ${e.toString()}')),
+      );
     }
   }
 
@@ -181,7 +178,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
               const SizedBox(height: 16),
 
-              // 2. Main "Total Sales" Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -232,44 +228,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         ],
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.arrow_upward,
-                                size: 12,
-                                color: Color(0xFF2E7D32),
-                              ),
-                              SizedBox(width: 2),
-                              Text(
-                                "12%",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E7D32),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          "last 7 days",
-                          style: TextStyle(fontSize: 11, color: Colors.black45),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -283,7 +241,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       title: "Orders",
                       value: "${metrics?.totalOrders ?? 0}",
                       icon: Icons.inventory_2_outlined,
-                      growth: "8%",
                       primaryColor: primaryColor,
                       cardBackgroundColor: cardBackgroundColor,
                     ),
@@ -297,7 +254,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         metrics?.currency ?? 'INR',
                       ),
                       icon: Icons.groups_outlined,
-                      growth: "6%",
                       primaryColor: primaryColor,
                       cardBackgroundColor: cardBackgroundColor,
                     ),
@@ -314,7 +270,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       title: "Units Sold",
                       value: "${metrics?.totalUnitsSold ?? 0}",
                       icon: Icons.shopping_bag_outlined,
-                      growth: null,
                       primaryColor: primaryColor,
                       cardBackgroundColor: cardBackgroundColor,
                     ),
@@ -326,8 +281,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       value:
                           "${(metrics?.cancellationRate ?? 0.0).toStringAsFixed(1)}%",
                       icon: Icons.bar_chart_rounded,
-                      growth: "2%",
-                      isNegative: true,
                       primaryColor: primaryColor,
                       cardBackgroundColor: cardBackgroundColor,
                     ),
@@ -343,13 +296,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  // Metric Card Widget
   Widget _metricCard({
     required String title,
     required String value,
     required IconData icon,
-    required String? growth,
-    bool isNegative = false,
     required Color primaryColor,
     required Color cardBackgroundColor,
   }) {
@@ -366,57 +316,31 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
               Icon(icon, size: 20, color: primaryColor),
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF8B2E3E),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (growth != null)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isNegative ? Icons.arrow_downward : Icons.arrow_upward,
-                      size: 11,
-                      color: isNegative
-                          ? const Color(0xFFC62828)
-                          : const Color(0xFF2E7D32),
-                    ),
-                    Text(
-                      growth,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: isNegative
-                            ? const Color(0xFFC62828)
-                            : const Color(0xFF2E7D32),
-                      ),
-                    ),
-                  ],
-                ),
-            ],
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF8B2E3E),
+            ),
           ),
         ],
       ),

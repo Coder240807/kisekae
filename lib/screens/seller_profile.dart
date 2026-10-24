@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/analytics_screen.dart';
+import 'package:kisekae/screens/store_order.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/email_auth.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final int storeId;
+  const ProfileScreen({super.key, required this.storeId});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -19,6 +22,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _openTerms() {}
+
+  void _openOrders() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => OrdersScreen(storeId: widget.storeId)),
+    );
+  }
+
+  void _openAnalytics() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AnalyticsScreen(storeId: widget.storeId),
+      ),
+    );
+  }
 
   Future<void> _confirmLogout() async {
     if (_isLoggingOut) return;
@@ -164,15 +181,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    final quickActions = <(IconData, String)>[
-      (Icons.inventory_2_outlined, 'Orders'),
-      (Icons.bookmark, 'Draft'),
-      (Icons.credit_card, 'Payment'),
-      (Icons.bar_chart, 'Analytics'),
-      (Icons.storefront, 'Store Information'),
-      (Icons.groups, 'Team Access'),
+    final quickActions = <(IconData, String, VoidCallback)>[
+      (Icons.inventory_2_outlined, 'Orders', _openOrders),
+      (Icons.bar_chart, 'Analytics', _openAnalytics),
+      (
+        Icons.storefront,
+        'Store Information',
+        () => _comingSoon('Store Information'),
+      ),
+      (Icons.groups, 'Team Access', () => _comingSoon('Team Access')),
     ];
-
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
@@ -218,7 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       cs,
                       icon: action.$1,
                       label: action.$2,
-                      onTap: () => _comingSoon(action.$2),
+                      onTap: action.$3,
                     ),
                 ],
               ),
@@ -236,21 +254,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               _settingTile(
                 cs,
-                icon: Icons.notifications,
-                label: 'Notification settings',
-                onTap: () => _comingSoon('Notification settings'),
-              ),
-              _settingTile(
-                cs,
                 icon: Icons.description,
                 label: 'Terms & conditions',
                 onTap: _openTerms,
-              ),
-              _settingTile(
-                cs,
-                icon: Icons.headphones,
-                label: 'Help & support',
-                onTap: () => _comingSoon('Help & support'),
               ),
               _settingTile(
                 cs,

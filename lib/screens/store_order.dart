@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/order_details.dart';
+import 'package:kisekae/screens/myorder_detail.dart';
 import 'package:kisekae/services/order_seller.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -173,7 +174,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Order No. - ${order.orderNumber}',
+                  order.orderNumber,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

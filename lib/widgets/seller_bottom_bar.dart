@@ -59,7 +59,7 @@ class SellerBottomBar extends StatelessWidget {
             break;
           case 3:
             targetRoute = MaterialPageRoute(
-              builder: (_) => const ProfileScreen(),
+              builder: (_) => ProfileScreen(storeId: storeId),
             );
             break;
         }
