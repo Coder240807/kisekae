@@ -3,9 +3,11 @@
 <plist version="1.0">
 	<dict>
 	    <key>NSPhotoLibraryUsageDescription</key>
-        <string>This app requires access to your photo library to let you select a profile picture.</string>
+        <string>Kisekae needs access to your photos so you can choose a picture for your profile or for virtual try-on.</string>
         <key>NSCameraUsageDescription</key>
-        <string>This app requires access to your camera to let you take photos directly inside the app.</string>
+        <string>Kisekae uses your camera so you can take a profile photo or a full-length photo for virtual try-on.</string>
+        <key>NSPhotoLibraryAddUsageDescription</key>
+        <string>Kisekae saves your try-on looks to your photo library.</string>
         <key>NSMicrophoneUsageDescription</key>
         <string>This app requires microphone access if you intend to record videos using the camera.</string>
 
