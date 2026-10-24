@@ -11,6 +11,36 @@ class HandleProduct extends BaseRepository {
 
   HandleProduct([Dio? dio]) : _dio = dio ?? DioClient.dio;
 
+  Map<String, dynamic>? _dataMap(dynamic body) {
+    if (body is Map) {
+      final inner = body['data'];
+      if (inner is Map) return Map<String, dynamic>.from(inner);
+      return Map<String, dynamic>.from(body);
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _paginated(dynamic body) {
+    if (body is Map) {
+      final inner = body['data'];
+      if (inner is Map) return Map<String, dynamic>.from(inner);
+      if (inner is List) return {'count': inner.length, 'results': inner};
+      return Map<String, dynamic>.from(body);
+    }
+    if (body is List) return {'count': body.length, 'results': body};
+    return null;
+  }
+
+  List<dynamic> _dataList(dynamic body) {
+    if (body is Map) {
+      final inner = body['data'];
+      if (inner is List) return inner;
+      return [];
+    }
+    if (body is List) return body;
+    return [];
+  }
+
   Future<PaginatedProductResponse> getStoreProducts({
     required int storeId,
     int? page,
@@ -19,30 +49,19 @@ class HandleProduct extends BaseRepository {
     String? status,
   }) async {
     return execute(() async {
+      final queryParams = <String, dynamic>{
+        if (page != null) 'page': page,
+        if (pageSize != null) 'page_size': pageSize,
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (status != null && status.isNotEmpty) 'status': status,
+      };
+
       final response = await _dio.get(
         '/stores/$storeId/products/',
-        queryParameters: {
-          'page': ?page,
-          'page_size': ?pageSize,
-          if (search != null && search.isNotEmpty) 'search': search,
-          if (status != null && status.isNotEmpty) 'status': status,
-        },
+        queryParameters: queryParams,
       );
-      final body = response.data;
-      Map<String, dynamic> payload;
-      if (body is Map<String, dynamic>) {
-        final inner = body['data'];
-        if (inner is Map<String, dynamic>) {
-          payload = inner;
-        } else if (inner is List) {
-          payload = {'count': inner.length, 'results': inner};
-        } else {
-          payload = body;
-        }
-      } else {
-        payload = {'count': 0, 'results': <dynamic>[]};
-      }
-      return PaginatedProductResponse.fromJson(payload);
+
+      return PaginatedProductResponse.fromJson(_paginated(response.data)!);
     });
   }
 
@@ -58,10 +77,7 @@ class HandleProduct extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final data = Map<String, dynamic>.from(body['data'] as Map);
-
-      return Product.fromJson(data);
+      return Product.fromJson(_dataMap(response.data)!);
     });
   }
 
@@ -71,11 +87,9 @@ class HandleProduct extends BaseRepository {
   }) async {
     return execute(() async {
       final response = await _dio.get('/stores/$storeId/products/$productId/');
-      debugPrint('PRODUCT DETAIL RAW: ${response.data}'); // temporary
+      debugPrint('PRODUCT DETAIL RAW: ${response.data}');
 
-      final body = response.data;
-      final data = body is Map ? (body['data'] ?? body) : body;
-      return Product.fromJson(Map<String, dynamic>.from(data as Map));
+      return Product.fromJson(_dataMap(response.data)!);
     });
   }
 
@@ -111,7 +125,7 @@ class HandleProduct extends BaseRepository {
         data: payload,
       );
 
-      return Product.fromJson(response.data as Map<String, dynamic>);
+      return Product.fromJson(_dataMap(response.data)!);
     });
   }
 
@@ -146,10 +160,7 @@ class HandleProduct extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final data = Map<String, dynamic>.from(body['data'] as Map);
-
-      return Product.fromJson(data);
+      return Product.fromJson(_dataMap(response.data)!);
     });
   }
 
@@ -164,8 +175,12 @@ class HandleProduct extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      return body['message'] as String? ?? 'Primary image removed successfully';
+      if (response.data is Map) {
+        final body = Map<String, dynamic>.from(response.data as Map);
+        return body['message'] as String? ??
+            'Primary image removed successfully';
+      }
+      return 'Primary image removed successfully';
     });
   }
 
@@ -180,10 +195,9 @@ class HandleProduct extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final dataList = (body['data'] as List<dynamic>?) ?? [];
+      final list = _dataList(response.data);
 
-      final images = dataList
+      final images = list
           .map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
           .toList();
 
@@ -218,10 +232,9 @@ class HandleProduct extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final dataList = (body['data'] as List<dynamic>?) ?? [];
+      final list = _dataList(response.data);
 
-      return dataList
+      return list
           .map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
           .toList();
     });
@@ -239,8 +252,11 @@ class HandleProduct extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      return body['success'] as bool? ?? true;
+      if (response.data is Map) {
+        final body = Map<String, dynamic>.from(response.data as Map);
+        return body['success'] as bool? ?? true;
+      }
+      return true;
     });
   }
 }

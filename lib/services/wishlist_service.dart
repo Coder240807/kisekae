@@ -8,12 +8,30 @@ class WishlistService extends BaseRepository {
 
   WishlistService([Dio? dio]) : _dio = dio ?? DioClient.dio;
 
+  Map<String, dynamic>? _dataMap(dynamic body) {
+    if (body is Map) {
+      final inner = body['data'];
+      if (inner is Map) return Map<String, dynamic>.from(inner);
+      return Map<String, dynamic>.from(body);
+    }
+    return null;
+  }
+
+  List<dynamic> _dataList(dynamic body) {
+    if (body is Map) {
+      final inner = body['data'];
+      if (inner is List) return inner;
+      return [];
+    }
+    if (body is List) return body;
+    return [];
+  }
+
   Future<List<WishlistItem>> getWishlistItems() async {
     return execute(() async {
       final response = await _dio.get('/accounts/wishlist/');
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final list = body['data'] as List<dynamic>;
+      final list = _dataList(response.data);
 
       return list
           .map(
@@ -33,10 +51,7 @@ class WishlistService extends BaseRepository {
 
       final response = await _dio.post('/accounts/wishlist/', data: payload);
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final itemData = Map<String, dynamic>.from(body['data'] as Map);
-
-      return WishlistItem.fromJson(itemData);
+      return WishlistItem.fromJson(_dataMap(response.data)!);
     });
   }
 
@@ -44,11 +59,11 @@ class WishlistService extends BaseRepository {
     return execute(() async {
       final response = await _dio.delete('/accounts/wishlist/');
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final message =
-          body['message']?.toString() ?? 'Wishlist cleared successfully.';
-
-      return message;
+      if (response.data is Map) {
+        final body = Map<String, dynamic>.from(response.data as Map);
+        return body['message']?.toString() ?? 'Wishlist cleared successfully.';
+      }
+      return 'Wishlist cleared successfully.';
     });
   }
 
@@ -56,12 +71,12 @@ class WishlistService extends BaseRepository {
     return execute(() async {
       final response = await _dio.delete('/accounts/wishlist/$productId/');
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final message =
-          body['message']?.toString() ??
-          'Item removed from wishlist successfully.';
-
-      return message;
+      if (response.data is Map) {
+        final body = Map<String, dynamic>.from(response.data as Map);
+        return body['message']?.toString() ??
+            'Item removed from wishlist successfully.';
+      }
+      return 'Item removed from wishlist successfully.';
     });
   }
 
@@ -70,8 +85,8 @@ class WishlistService extends BaseRepository {
       final response = await _dio.post(
         '/accounts/wishlist/$productId/move-to-cart/',
       );
-      final body = Map<String, dynamic>.from(response.data as Map);
-      return MoveToCartResult.fromJson(body);
+
+      return MoveToCartResult.fromJson(_dataMap(response.data)!);
     });
   }
 
@@ -84,8 +99,7 @@ class WishlistService extends BaseRepository {
         data: payload,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      return BulkMoveToCartResult.fromJson(body);
+      return BulkMoveToCartResult.fromJson(_dataMap(response.data)!);
     });
   }
 }

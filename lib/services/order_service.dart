@@ -8,6 +8,25 @@ class OrderService extends BaseRepository {
 
   OrderService([Dio? dio]) : _dio = dio ?? DioClient.dio;
 
+  Map<String, dynamic>? _dataMap(dynamic body) {
+    if (body is Map) {
+      final inner = body['data'];
+      if (inner is Map) return Map<String, dynamic>.from(inner);
+      return Map<String, dynamic>.from(body);
+    }
+    return null;
+  }
+
+  List<dynamic> _dataList(dynamic body) {
+    if (body is Map) {
+      final inner = body['data'];
+      if (inner is List) return inner;
+      return [];
+    }
+    if (body is List) return body;
+    return [];
+  }
+
   Future<List<CustomerOrderSummary>> getOrders({
     String? status,
     CancelToken? cancelToken,
@@ -23,8 +42,7 @@ class OrderService extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final list = body['data'] as List<dynamic>? ?? [];
+      final list = _dataList(response.data);
 
       return list
           .map(
@@ -46,10 +64,7 @@ class OrderService extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final data = Map<String, dynamic>.from(body['data'] as Map);
-
-      return OrderDetail.fromJson(data);
+      return OrderDetail.fromJson(_dataMap(response.data)!);
     });
   }
 
@@ -63,10 +78,7 @@ class OrderService extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final data = Map<String, dynamic>.from(body['data'] as Map);
-
-      return OrderDetail.fromJson(data);
+      return OrderDetail.fromJson(_dataMap(response.data)!);
     });
   }
 
@@ -80,10 +92,7 @@ class OrderService extends BaseRepository {
         cancelToken: cancelToken,
       );
 
-      final body = Map<String, dynamic>.from(response.data as Map);
-      final data = Map<String, dynamic>.from(body['data'] as Map);
-
-      return OrderTrackingDetail.fromJson(data);
+      return OrderTrackingDetail.fromJson(_dataMap(response.data)!);
     });
   }
 }
