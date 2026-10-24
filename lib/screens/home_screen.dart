@@ -33,8 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
               .push(MaterialPageRoute(builder: (_) => const WishlistScreen()));
         },
         child: const SizedBox(
-          height: 46,
-          width: 46,
+          height: 37,
+          width: 37,
           child: Icon(Icons.favorite, color: Color(0xFFDBBEC3), size: 22),
         ),
       ),

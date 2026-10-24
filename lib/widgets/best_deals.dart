@@ -98,6 +98,7 @@ class _FeaturedProductsRowState extends State<FeaturedProductsRow> {
       child: ProductCard(
         imageUrl: imageUrl,
         title: product.name,
+        storeName: product.storeName,
         rating: product.averageRating,
         price: price,
         alignment: const Alignment(0, -0.75),
