@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:kisekae/screens/addresses.dart";
+import "package:kisekae/screens/combos_screen.dart";
 import "package:kisekae/screens/myorders_screen.dart";
 import "package:kisekae/screens/onboarding_screen.dart";
 import "package:kisekae/screens/personal_details.dart";
@@ -120,9 +121,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                   child: iconChip(
                     Icons.checkroom,
-                    "Saved AR looks",
+                    "Saved combos",
                     iconSize: 24,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const CombosScreen()),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -168,12 +173,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
             actionChip(
-              Icons.notifications_none,
-              "Notification settings",
-              onTap: () {},
-            ),
-            const SizedBox(height: 16),
-            actionChip(
               Icons.description_outlined,
               "Terms & conditions",
               onTap: () {
@@ -182,12 +181,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   MaterialPageRoute(builder: (_) => const TermsScreen()),
                 );
               },
-            ),
-            const SizedBox(height: 16),
-            actionChip(
-              Icons.headset_mic_outlined,
-              "Help & support",
-              onTap: () {},
             ),
             const SizedBox(height: 16),
             actionChip(

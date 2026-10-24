@@ -219,7 +219,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Status Option Segmented Selector
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -258,7 +257,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Conditional Tracking Inputs for SHIPPED / DELIVERED
                     if (selectedStatus == "SHIPPED" ||
                         selectedStatus == "DELIVERED") ...[
                       TextFormField(
@@ -277,7 +275,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       const SizedBox(height: 10),
                     ],
 
-                    // Notes Input
                     TextFormField(
                       controller: notesController,
                       maxLines: 2,
@@ -289,7 +286,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Submit Button
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(

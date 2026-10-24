@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/seller_product.dart';
+import 'package:kisekae/screens/sellerproductdetail.dart';
 import 'package:kisekae/services/seller_product.dart';
 
 class InventoryScreen extends StatefulWidget {
@@ -78,11 +79,123 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
   }
 
+  void _openProduct(Product product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SellerProductDetailScreen(
+          storeId: widget.storeId,
+          productId: product.id,
+        ),
+      ),
+    ).then((_) {
+      // Reload quietly when coming back, so edits made there show up here.
+      if (mounted) _fetchProducts(showLoader: false);
+    });
+  }
+
+  Widget _productCard(Product product) {
+    const cardBackgroundColor = Color(0xFFFFF8F0);
+    final statusDisplay = _getStatusDisplay(product);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openProduct(product),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cardBackgroundColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE5DDD2)),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      product.imageUrl!,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 80,
+                        height: 80,
+                        color: const Color(0xFFE5DDD2),
+                        child: const Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      width: 80,
+                      height: 80,
+                      color: const Color(0xFFE5DDD2),
+                      child: const Icon(Icons.checkroom, color: Colors.grey),
+                    ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (product.sku?.trim().isNotEmpty ?? false)
+                        ? "Product no. - ${product.sku}"
+                        : "Product no. - ${product.id}",
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Stock - ${product.stock}",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black.withOpacity(0.7),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        "Status - ",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.black.withOpacity(0.7),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        statusDisplay['text'] as String,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: statusDisplay['color'] as Color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.black.withOpacity(0.4)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const backgroundColor = Color(0xFFEFE8DF);
     const primaryColor = Color(0xFF8B2E3E);
-    const cardBackgroundColor = Color(0xFFFFF8F0);
 
     final products = _visibleProducts();
 
@@ -112,7 +225,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       body: Column(
         children: [
           const SizedBox(height: 8),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
@@ -152,9 +264,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               }).toList(),
             ),
           ),
-
           const SizedBox(height: 16),
-
           Expanded(
             child: _isLoading
                 ? const Center(
@@ -181,106 +291,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
                       itemCount: products.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final product = products[index];
-                        final statusDisplay = _getStatusDisplay(product);
-
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: cardBackgroundColor,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFE5DDD2)),
-                          ),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child:
-                                    product.imageUrl != null &&
-                                        product.imageUrl!.isNotEmpty
-                                    ? Image.network(
-                                        product.imageUrl!,
-                                        width: 80,
-                                        height: 80,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Container(
-                                          width: 80,
-                                          height: 80,
-                                          color: const Color(0xFFE5DDD2),
-                                          child: const Icon(
-                                            Icons.image_not_supported,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      )
-                                    : Container(
-                                        width: 80,
-                                        height: 80,
-                                        color: const Color(0xFFE5DDD2),
-                                        child: const Icon(
-                                          Icons.checkroom,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                              ),
-
-                              const SizedBox(width: 16),
-
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Product no. - ${product.sku ?? product.name}",
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      "Stock - ${product.stock}",
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.black.withOpacity(0.7),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          "Status - ",
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.black.withOpacity(
-                                              0.7,
-                                            ),
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        Text(
-                                          statusDisplay['text'] as String,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                statusDisplay['color'] as Color,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                      itemBuilder: (context, index) =>
+                          _productCard(products[index]),
                     ),
                   ),
           ),

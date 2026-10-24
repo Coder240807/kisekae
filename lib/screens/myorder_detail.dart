@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:kisekae/models/customer_order.dart';
+import 'package:kisekae/screens/trackorderscreen.dart';
 import 'package:kisekae/services/order_service.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
@@ -61,7 +62,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   Future<void> _handleCancelOrder() async {
     if (_orderDetail == null) return;
 
-    // Show Confirmation Dialog
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -292,18 +292,20 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
             const SizedBox(height: 16),
 
-            // Track & Cancel Action Buttons
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed:
-                        (order.trackingUrl != null &&
-                            order.trackingUrl!.isNotEmpty)
-                        ? () {
-                            // Launch tracking URL
-                          }
-                        : null,
+                    onPressed: order.status.toUpperCase() == 'CANCELLED'
+                        ? null
+                        : () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    TrackOrderScreen(orderId: order.id),
+                              ),
+                            );
+                          },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       side: const BorderSide(color: primaryColor),

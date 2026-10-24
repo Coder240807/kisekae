@@ -109,3 +109,58 @@ class ProductImage {
     );
   }
 }
+
+class ProductSizeInput {
+  final String size;
+  final int stock;
+
+  ProductSizeInput({required this.size, required this.stock});
+
+  Map<String, dynamic> toJson() {
+    return {'size': size, 'stock': stock};
+  }
+}
+
+class CreateProductRequest {
+  final String name;
+  final String category;
+  final String? color;
+  final String? description;
+  final String price;
+  final String? compareAtPrice;
+  final String currency;
+  final String? sku;
+  final int stock;
+  final List<ProductSizeInput> sizes;
+  final String status;
+
+  CreateProductRequest({
+    required this.name,
+    required this.category,
+    this.color,
+    this.description,
+    required this.price,
+    this.compareAtPrice,
+    this.currency = 'INR',
+    this.sku,
+    required this.stock,
+    this.sizes = const [],
+    this.status = 'DRAFT',
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'category': category,
+      'color': color ?? '',
+      'description': description ?? '',
+      'price': price,
+      'compare_at_price': compareAtPrice ?? '',
+      'currency': currency,
+      'sku': sku ?? '',
+      'stock': stock,
+      'sizes': sizes.map((size) => size.toJson()).toList(),
+      'status': status,
+    };
+  }
+}

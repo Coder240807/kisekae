@@ -2,6 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+	    <key>NSPhotoLibraryUsageDescription</key>
+        <string>Kisekae needs access to your photos so you can choose a picture for your profile or for virtual try-on.</string>
+        <key>NSCameraUsageDescription</key>
+        <string>Kisekae uses your camera so you can take a profile photo or a full-length photo for virtual try-on.</string>
+        <key>NSPhotoLibraryAddUsageDescription</key>
+        <string>Kisekae saves your try-on looks to your photo library.</string>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>This app requires microphone access if you intend to record videos using the camera.</string>
+
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>

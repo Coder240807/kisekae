@@ -6,6 +6,7 @@ import 'package:kisekae/models/product_detail.dart';
 import 'package:kisekae/models/product_review.dart';
 import 'package:kisekae/models/user_address.dart';
 import 'package:kisekae/models/wishlist.dart';
+import 'package:kisekae/screens/ar_screen.dart';
 
 import 'package:kisekae/screens/cart.dart';
 import 'package:kisekae/services/buyer_address.dart';
@@ -15,6 +16,7 @@ import 'package:kisekae/services/cart_service.dart';
 import 'package:kisekae/services/profile_details.dart';
 import 'package:kisekae/services/reviews_service.dart';
 import 'package:kisekae/services/wishlist_service.dart';
+import 'package:kisekae/widgets/add_to_combo.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final int productId;
@@ -225,7 +227,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  Future<void> _addToCart() async {
+  Future<void> _addToCart({bool openCart = true}) async {
     final product = _product;
     if (product == null || _isAddingToCart) return;
 
@@ -244,8 +246,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         quantity: 1,
       );
       if (!mounted) return;
-      Navigator.of(context)
-          .push(MaterialPageRoute(builder: (_) => const CartScreen()));
+      if (openCart) {
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const CartScreen()));
+      } else {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Added to cart")));
+      }
     } catch (e) {
       if (!mounted) return;
       final message = e is ApiException ? e.message : 'Could not add to cart';
@@ -629,13 +636,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 color: Colors.black,
                               ),
                             ),
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const CartScreen(),
-                                ),
-                              );
-                            },
+
+                            onTap: () => _addToCart(openCart: false),
                           ),
                           const SizedBox(width: 8),
                           _circleIconButton(
@@ -851,7 +853,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       child: SizedBox(
                         height: 46,
                         child: FilledButton(
-                          onPressed: () {},
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ArTryOnScreen(
+                                productId: product.id,
+                                productName: product.name,
+                                productThumbnail: imageList.isNotEmpty
+                                    ? imageList.first
+                                    : null,
+                              ),
+                            ),
+                          ),
                           style: FilledButton.styleFrom(
                             backgroundColor: primaryColor,
                             shape: RoundedRectangleBorder(
@@ -902,6 +914,27 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () =>
+                        showAddToComboSheet(context, productId: product.id),
+                    icon: const Icon(
+                      Icons.add_circle_outline,
+                      color: primaryColor,
+                      size: 20,
+                    ),
+                    label: const Text(
+                      "Add to combo",
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 20),

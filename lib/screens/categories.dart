@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
-import "package:kisekae/screens/search.dart";
 import "package:kisekae/screens/subcategories.dart";
 import "package:kisekae/widgets/bottom_bar.dart";
+import "package:kisekae/widgets/searchbar.dart";
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
@@ -41,38 +41,19 @@ class CategoriesScreen extends StatelessWidget {
           "Categories",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(58),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: KisekaeSearchBar(),
+          ),
+        ),
       ),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const SearchScreen()),
-                    );
-                  },
-                  label: const Text(
-                    'EXPLORE YOUR STYLE',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  icon: Icon(Icons.search, size: 24, color: Colors.black),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFE8D8C4),
-                    alignment: Alignment.centerLeft,
-                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                    side: BorderSide(color: const Color(0xFFB78876)),
-                  ),
-                ),
-              ),
               const SizedBox(height: 16),
               Column(
                 spacing: 16,
@@ -92,7 +73,7 @@ class CategoriesScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomBar(selectedIndex: 1),
+      bottomNavigationBar: const BottomBar(selectedIndex: 1),
     );
   }
 

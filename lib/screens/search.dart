@@ -212,15 +212,6 @@ class _SearchScreenState extends State<SearchScreen> {
                           color: Colors.black54,
                           size: 18,
                         ),
-                      )
-                    else
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Icon(
-                          Icons.camera_alt_outlined,
-                          color: Colors.black87,
-                          size: 20,
-                        ),
                       ),
                   ],
                 ),

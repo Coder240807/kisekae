@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:kisekae/screens/addresses.dart';
 import 'package:kisekae/screens/products_list.dart';
 import 'package:kisekae/screens/search.dart';
 import 'package:kisekae/screens/categories.dart';
 import 'package:kisekae/screens/wishlist_screen.dart';
+import 'package:kisekae/widgets/best_deals.dart';
 import 'package:kisekae/widgets/bottom_bar.dart';
+import 'package:kisekae/widgets/searchbar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,38 +21,6 @@ class _HomeScreenState extends State<HomeScreen> {
     'assets/images/brands/deals2.png',
     'assets/images/brands/deals3.png',
   ];
-
-  Widget _searchBar() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context)
-            .push(MaterialPageRoute(builder: (_) => const SearchScreen()));
-      },
-      child: Container(
-        height: 46,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFBF8F5),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFD3C7B8)),
-        ),
-        child: const Row(
-          children: [
-            Icon(Icons.search, color: Colors.black87, size: 20),
-            SizedBox(width: 8),
-            Text(
-              "EXPLORE YOUR STYLE",
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _wishlistButton() {
     return Material(
@@ -74,71 +45,89 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 135,
+        toolbarHeight: 118,
         automaticallyImplyLeading: false,
         centerTitle: false,
         titleSpacing: 16,
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "KISEKAE",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF7D2938),
-                    fontFamily: 'serif',
+        title: Padding(
+          padding: const EdgeInsets.only(bottom: 10.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "KISEKAE",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF7D2938),
+                      fontFamily: 'serif',
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: () {},
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  icon: const Icon(
-                    Icons.notifications_none_rounded,
-                    color: Color(0xFF8B2E3E),
+                  IconButton(
+                    onPressed: () {},
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Color(0xFF8B2E3E),
+                      size: 22,
+                    ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddressesScreen(),
+                    ),
+                  );
+                },
+                behavior: HitTestBehavior.opaque,
+                child: const Row(
+                  children: [
+                    Icon(Icons.place_rounded, size: 18),
+                    SizedBox(width: 2),
+                    Text(
+                      "HOME",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Icon(Icons.keyboard_arrow_down, size: 20),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            const Row(
-              children: [
-                Icon(Icons.place_rounded),
-                Text(
-                  "HOME",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                Icon(Icons.keyboard_arrow_down),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(child: _searchBar()),
-                const SizedBox(width: 12),
-                _wishlistButton(),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(child: KisekaeSearchBar()),
+                  const SizedBox(width: 10),
+                  _wishlistButton(),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
                   const SizedBox(height: 8),
                   Container(
                     width: 370,
                     height: 250,
-
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
                       border: Border.all(
@@ -173,12 +162,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           );
                         },
-                        icon: Icon(Icons.arrow_forward),
+                        icon: const Icon(Icons.arrow_forward),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  const Row(
                     children: [
                       _CategoryImage(
                         imageUrl: 'assets/images/clothes/4.jpg',
@@ -222,11 +211,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   stops: [0.2067, 0.6058, 0.8173, 1.0],
                 ),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Flat ₹500 Off',
                     style: TextStyle(
                       color: Colors.white,
@@ -248,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           letterSpacing: 0.5,
                         ),
                       ),
-                      const Text(
+                      Text(
                         "FEST500",
                         style: TextStyle(
                           color: Color(0xFFD9601A),
@@ -257,8 +246,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           letterSpacing: 0.5,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      const Text(
+                      SizedBox(height: 2),
+                      Text(
                         "T&C Apply",
                         style: TextStyle(color: Colors.white38, fontSize: 8),
                       ),
@@ -268,7 +257,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 6),
-
             Column(
               children: [
                 const Padding(
@@ -323,59 +311,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Continue Shopping For',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const ProductListScreen(),
-                            ),
-                          );
-                        },
-                        icon: Icon(Icons.arrow_forward),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ProductCard(
-                          imageUrl: 'assets/images/clothes/8.jpg',
-                          title: 'floral top',
-                          rating: 3.9,
-                          price: 375,
-                          alignment: Alignment(0, -0.4),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ProductCard(
-                          imageUrl: 'assets/images/clothes/6.jpg',
-                          title: 'tailored blazer',
-                          rating: 4.5,
-                          price: 705,
-                          alignment: Alignment(0, -0.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 22),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -394,34 +334,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           );
                         },
-                        icon: Icon(Icons.arrow_forward),
+                        icon: const Icon(Icons.arrow_forward),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ProductCard(
-                          imageUrl: 'assets/images/clothes/7.jpg',
-                          title: 'tailored blazer',
-                          rating: 4.5,
-                          price: 705,
-                          alignment: Alignment(0, -0.75),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ProductCard(
-                          imageUrl: 'assets/images/clothes/9.jpg',
-                          title: 'tailored blazer',
-                          rating: 4.5,
-                          price: 705,
-                          alignment: Alignment(0, -0.75),
-                        ),
-                      ),
-                    ],
-                  ),
+                  const FeaturedProductsRow(),
                   const SizedBox(height: 16),
                 ],
               ),
@@ -434,69 +352,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class ProductCard extends StatelessWidget {
-  final String imageUrl;
-  final String title;
-  final double rating;
-  final int price;
-  final Alignment alignment;
-
-  const ProductCard({
-    super.key,
-    required this.imageUrl,
-    required this.title,
-    required this.rating,
-    required this.price,
-    required this.alignment,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 190,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 140,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Color(0xFF8B2E3E)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16.5),
-              child: Image.asset(
-                imageUrl,
-                fit: BoxFit.cover,
-                alignment: alignment,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(title, style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 4),
-              const Icon(Icons.star, size: 16, color: Colors.amber),
-              Text('$rating'),
-            ],
-          ),
-          Text(
-            '₹$price',
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _CategoryImage extends StatelessWidget {
   final String imageUrl;
   final Alignment alignment;
   final String label;
+
   const _CategoryImage({
     required this.imageUrl,
     required this.alignment,

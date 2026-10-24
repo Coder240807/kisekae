@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:kisekae/models/product_detail.dart';
 import 'package:kisekae/screens/filter_screen.dart';
+import 'package:kisekae/screens/product_screen.dart';
 import 'package:kisekae/services/buyer_product.dart';
 
 import 'package:kisekae/services/wishlist_service.dart';
@@ -197,8 +198,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
                   onSubmitted: (value) {
-                    FocusScope.of(context)
-                        .unfocus(); // Unfocus keyboard immediately
+                    FocusScope.of(context).unfocus();
                     _searchQuery = value.trim();
                     _fetchProducts();
                   },
@@ -319,7 +319,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
             const SizedBox(height: 16),
 
-            // Product Grid Area
             Expanded(
               child: _isLoading
                   ? const Center(
@@ -351,7 +350,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                   ),
                               itemBuilder: (context, index) {
                                 final product = _products[index];
-                                return _buildProductCard(product);
+                                return GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    FocusScope.of(context).unfocus();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => ProductDetailsScreen(
+                                          productId: product.id,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: _buildProductCard(product),
+                                );
                               },
                             ),
                     ),
@@ -365,6 +377,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Widget _buildProductCard(ProductDetail product) {
     final isWishlisted = _wishlistedProductIds.contains(product.id);
     final imageUrl = product.imageUrl ?? product.thumbnail ?? '';
+    debugPrint('IMAGE URL: $imageUrl');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,7 +441,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       child: Image.asset(
                         isWishlisted
                             ? 'assets/icons/wishlist.png'
-                            : 'assets/icons/wishlist1.png',
+                            : 'assets/icons/wishlist2.png',
                         width: 18,
                         height: 18,
                       ),
