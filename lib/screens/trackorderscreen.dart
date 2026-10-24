@@ -65,7 +65,6 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
     final parsed = DateTime.tryParse(rawDate);
     if (parsed == null) return rawDate;
 
-    // Formats into legible date & time (e.g. Oct 23, 2026 - 02:15 PM)
     final year = parsed.year;
     final month = _getMonthName(parsed.month);
     final day = parsed.day;
@@ -268,7 +267,6 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                                     ),
                                   ),
 
-                                  // Status Notes (if present)
                                   if (item.notes != null &&
                                       item.notes!.isNotEmpty) ...[
                                     const SizedBox(height: 4),

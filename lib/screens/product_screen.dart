@@ -227,7 +227,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  Future<void> _addToCart() async {
+  Future<void> _addToCart({bool openCart = true}) async {
     final product = _product;
     if (product == null || _isAddingToCart) return;
 
@@ -246,8 +246,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         quantity: 1,
       );
       if (!mounted) return;
-      Navigator.of(context)
-          .push(MaterialPageRoute(builder: (_) => const CartScreen()));
+      if (openCart) {
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const CartScreen()));
+      } else {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Added to cart")));
+      }
     } catch (e) {
       if (!mounted) return;
       final message = e is ApiException ? e.message : 'Could not add to cart';
@@ -631,13 +636,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 color: Colors.black,
                               ),
                             ),
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const CartScreen(),
-                                ),
-                              );
-                            },
+
+                            onTap: () => _addToCart(openCart: false),
                           ),
                           const SizedBox(width: 8),
                           _circleIconButton(

@@ -173,12 +173,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
             actionChip(
-              Icons.notifications_none,
-              "Notification settings",
-              onTap: () {},
-            ),
-            const SizedBox(height: 16),
-            actionChip(
               Icons.description_outlined,
               "Terms & conditions",
               onTap: () {
@@ -187,12 +181,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   MaterialPageRoute(builder: (_) => const TermsScreen()),
                 );
               },
-            ),
-            const SizedBox(height: 16),
-            actionChip(
-              Icons.headset_mic_outlined,
-              "Help & support",
-              onTap: () {},
             ),
             const SizedBox(height: 16),
             actionChip(

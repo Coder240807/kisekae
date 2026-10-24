@@ -18,12 +18,15 @@ class OrderService extends BaseRepository {
   }
 
   List<dynamic> _dataList(dynamic body) {
+    if (body is List) return body;
     if (body is Map) {
       final inner = body['data'];
       if (inner is List) return inner;
-      return [];
+      if (inner is Map && inner['results'] is List) {
+        return inner['results'] as List;
+      }
+      if (body['results'] is List) return body['results'] as List;
     }
-    if (body is List) return body;
     return [];
   }
 
