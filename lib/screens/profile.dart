@@ -5,6 +5,7 @@ import "package:kisekae/screens/myorders_screen.dart";
 import "package:kisekae/screens/onboarding_screen.dart";
 import "package:kisekae/screens/personal_details.dart";
 import "package:kisekae/screens/terms_conditions.dart";
+import "package:kisekae/screens/wallet_screen.dart";
 import "package:kisekae/screens/wishlist_screen.dart";
 import "package:kisekae/services/account_service.dart";
 import "package:kisekae/services/email_auth.dart";
@@ -192,9 +193,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: iconChip(
-                    Icons.card_giftcard,
-                    "Gift cards",
-                    onTap: () {},
+                    Icons.wallet,
+                    "Wallet",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const WalletScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
