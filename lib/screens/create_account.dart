@@ -71,6 +71,19 @@ class _CreateAccountState extends State<CreateAccount> {
           return;
         }
 
+        if (response.errorCode == 'REGISTRATION_PENDING') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => VerifyCodeScreen(
+                email: email,
+                isSeller: widget.isSeller,
+              ),
+            ),
+          );
+          return;
+        }
+
         if (response.message.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

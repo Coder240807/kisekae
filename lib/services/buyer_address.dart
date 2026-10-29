@@ -11,7 +11,7 @@ class AddressService extends BaseRepository {
   Future<List<CustomerAddress>> getAddresses({CancelToken? cancelToken}) async {
     return execute(() async {
       final response = await _dio.get(
-        '/accounts/addresses/',
+        '/profile/address/',
         cancelToken: cancelToken,
       );
 
@@ -59,7 +59,7 @@ class AddressService extends BaseRepository {
         'is_default': isDefault,
       };
 
-      final response = await _dio.post('/accounts/addresses/', data: payload);
+      final response = await _dio.post('/profile/address/', data: payload);
 
       final body = Map<String, dynamic>.from(response.data as Map);
       final addressData = Map<String, dynamic>.from(body['data'] as Map);
@@ -101,7 +101,7 @@ class AddressService extends BaseRepository {
       };
 
       final response = await _dio.put(
-        '/accounts/addresses/$addressId/',
+        '/profile/address/$addressId/',
         data: payload,
       );
 
@@ -127,7 +127,7 @@ class AddressService extends BaseRepository {
   Future<CustomerAddress> setDefaultAddress(int addressId) async {
     return execute(() async {
       final response = await _dio.post(
-        '/accounts/addresses/$addressId/default/',
+        '/profile/address/$addressId/default/',
       );
 
       final body = Map<String, dynamic>.from(response.data as Map);
