@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class ProductCard extends StatelessWidget {
   final String imageUrl;
   final String title;
+  final String storeName;
   final double rating;
   final int price;
   final Alignment alignment;
@@ -13,11 +14,14 @@ class ProductCard extends StatelessWidget {
     required this.title,
     required this.rating,
     required this.price,
+    this.storeName = '',
     this.alignment = Alignment.center,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasStore = storeName.trim().isNotEmpty;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,28 +62,51 @@ class ProductCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Text(
-                title,
+                hasStore ? storeName : title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: hasStore ? FontWeight.w500 : FontWeight.w400,
+                  color: hasStore ? Colors.black : Colors.black54,
+                ),
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 6),
             const Icon(Icons.star, size: 16, color: Colors.amber),
             const SizedBox(width: 2),
-            Text(rating.toStringAsFixed(1)),
+            Text(
+              rating.toStringAsFixed(1),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
           ],
         ),
+        if (hasStore)
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Colors.black54,
+            ),
+          ),
         Text(
           '₹$price',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ],
     );

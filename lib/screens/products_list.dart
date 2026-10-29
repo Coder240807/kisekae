@@ -268,7 +268,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
           children: [
             const SizedBox(height: 8),
 
-            // Backend-Connected Horizontal Filter Chips
             SizedBox(
               height: 38,
               child: ListView.separated(
@@ -377,7 +376,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Widget _buildProductCard(ProductDetail product) {
     final isWishlisted = _wishlistedProductIds.contains(product.id);
     final imageUrl = product.imageUrl ?? product.thumbnail ?? '';
-    debugPrint('IMAGE URL: $imageUrl');
+    final hasStore = product.storeName.trim().isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,16 +415,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         ),
                       ),
               ),
-
-              // Wishlist Icon Container
               Positioned(
                 top: 8,
                 right: 8,
                 child: GestureDetector(
                   onTap: () => _toggleWishlist(product),
                   child: Container(
-                    height: 32,
-                    width: 32,
+                    height: 26,
+                    width: 26,
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
@@ -442,8 +439,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         isWishlisted
                             ? 'assets/icons/wishlist.png'
                             : 'assets/icons/wishlist2.png',
-                        width: 18,
-                        height: 18,
+                        width: 26,
+                        height: 26,
                       ),
                     ),
                   ),
@@ -452,44 +449,51 @@ class _ProductListScreenState extends State<ProductListScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Text(
-                product.name,
+                hasStore ? product.storeName : product.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  fontWeight: hasStore ? FontWeight.w500 : FontWeight.w400,
+                  color: hasStore ? Colors.black : Colors.black54,
                 ),
               ),
             ),
-            Row(
-              children: [
-                const Icon(Icons.star, size: 16, color: Colors.amber),
-                const SizedBox(width: 2),
-                const Text(
-                  "5.0",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 6),
+            const Icon(Icons.star, size: 16, color: Colors.amber),
+            const SizedBox(width: 2),
+            Text(
+              product.averageRating.toStringAsFixed(1),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
             ),
           ],
         ),
+        if (hasStore)
+          Text(
+            product.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Colors.black54,
+            ),
+          ),
         Text(
           "₹${double.tryParse(product.price)?.toInt() ?? product.price}",
           style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
         ),

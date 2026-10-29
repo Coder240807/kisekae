@@ -644,9 +644,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             customChild: Image.asset(
                               _isWishlisted
                                   ? 'assets/icons/wishlist.png'
-                                  : 'assets/icons/wishlist1.png',
-                              width: 18,
-                              height: 18,
+                                  : 'assets/icons/wishlist2.png',
+                              width: 20,
+                              height: 20,
                               errorBuilder: (_, __, ___) => Icon(
                                 _isWishlisted
                                     ? Icons.favorite
@@ -657,20 +657,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             ),
                             onTap: _toggleWishlist,
                           ),
-                          const SizedBox(width: 8),
-                          _circleIconButton(
-                            customChild: Image.asset(
-                              'assets/icons/share.png',
-                              width: 18,
-                              height: 18,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.share_outlined,
-                                size: 18,
-                                color: Colors.black,
-                              ),
-                            ),
-                            onTap: () {},
-                          ),
+                          const SizedBox(height: 8),
                         ],
                       ),
                     ),

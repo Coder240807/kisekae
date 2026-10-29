@@ -51,7 +51,7 @@ class StoreOperations extends BaseRepository {
 
       final response = await _dio.get('/stores/', queryParameters: queryParams);
 
-      debugPrint('GET STORES RAW: ${response.data}'); // temporary
+      debugPrint('GET STORES RAW: ${response.data}');
 
       final body = response.data;
       Map<String, dynamic> payload;
@@ -74,19 +74,26 @@ class StoreOperations extends BaseRepository {
   Future<Store> createStore({
     required String name,
     required String description,
-    required String contactEmail,
-    required String contactPhone,
+    required File logo,
+    required File banner,
+    String? websiteLink,
+    String? instagramLink,
+    String? contactEmail,
+    String? contactPhone,
   }) async {
     return execute(() async {
-      final response = await _dio.post(
-        '/stores/',
-        data: {
-          'name': name,
-          'description': description,
-          'contact_email': contactEmail,
-          'contact_phone': contactPhone,
-        },
-      );
+      final formData = FormData.fromMap({
+        'name': name,
+        'description': description,
+        'logo': await _imagePart(logo),
+        'banner': await _imagePart(banner),
+        if (websiteLink != null) 'website_link': websiteLink,
+        if (instagramLink != null) 'instagram_link': instagramLink,
+        if (contactEmail != null) 'contact_email': contactEmail,
+        if (contactPhone != null) 'contact_phone': contactPhone,
+      });
+
+      final response = await _dio.post('/stores/', data: formData);
       final body = response.data as Map<String, dynamic>;
       return Store.fromJson((body['data'] ?? body) as Map<String, dynamic>);
     });
@@ -383,5 +390,20 @@ class StoreOperations extends BaseRepository {
       final body = response.data as Map<String, dynamic>;
       return body['data'];
     });
+  }
+
+  Future<MultipartFile> _imagePart(File file) {
+    final name = file.path.split('/').last;
+    final ext = name.split('.').last.toLowerCase();
+    final mime = switch (ext) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      _ => 'image/jpeg',
+    };
+    return MultipartFile.fromFile(
+      file.path,
+      filename: name,
+      contentType: DioMediaType.parse(mime),
+    );
   }
 }

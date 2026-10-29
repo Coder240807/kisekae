@@ -5,6 +5,7 @@ import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/dashboard_model.dart';
 import 'package:kisekae/screens/add_product.dart';
 import 'package:kisekae/screens/analytics_screen.dart';
+import 'package:kisekae/screens/multiple_stores.dart';
 import 'package:kisekae/screens/store_order.dart';
 import 'package:kisekae/services/analytics.dart';
 import 'package:kisekae/widgets/seller_bottom_bar.dart';
@@ -97,21 +98,33 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
         elevation: 0,
         toolbarHeight: 50,
         automaticallyImplyLeading: false,
-        title: Column(
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: const Text(
-                "KISEKAE",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF7D2938),
-                  fontFamily: 'serif',
-                ),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.black,
+            size: 20,
+          ),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MultipleStoresScreen(),
               ),
+              (route) => false,
+            );
+          },
+        ),
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: const Text(
+            "KISEKAE",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF7D2938),
+              fontFamily: 'serif',
             ),
-          ],
+          ),
         ),
         actions: [
           IconButton(

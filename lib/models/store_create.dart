@@ -14,6 +14,8 @@ class Store {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? archivedAt;
+  final String? websiteLink;
+  final String? instagramLink;
 
   bool get isApproved => status == 'ACTIVE' && isBusinessVerified;
 
@@ -33,6 +35,8 @@ class Store {
     required this.createdAt,
     required this.updatedAt,
     this.archivedAt,
+    this.websiteLink,
+    this.instagramLink,
   });
 
   factory Store.fromJson(Map<String, dynamic> json) {
@@ -58,6 +62,8 @@ class Store {
       archivedAt: json['archived_at'] != null
           ? DateTime.tryParse(json['archived_at'].toString())
           : null,
+      websiteLink: json['website_link'] as String?,
+      instagramLink: json['instagram_link'] as String?,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/analytics_screen.dart';
+import 'package:kisekae/screens/seller_invite.dart';
 import 'package:kisekae/screens/store_order.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/email_auth.dart';
@@ -34,6 +35,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       MaterialPageRoute(
         builder: (_) => AnalyticsScreen(storeId: widget.storeId),
       ),
+    );
+  }
+
+  void _openInvites() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => InvitesScreen(storeId: widget.storeId)),
     );
   }
 
@@ -84,7 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    Navigator.pushNamedAndRemoveUntil(context, '/onboarding', (route) => false);
   }
 
   Widget _quickAction(
@@ -246,6 +253,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(fontSize: 18, color: cs.onSurface),
               ),
               const SizedBox(height: 12),
+              _settingTile(
+                cs,
+                icon: Icons.mail_outline,
+                label: 'Invites',
+                onTap: _openInvites,
+              ),
               _settingTile(
                 cs,
                 icon: Icons.person,
