@@ -125,7 +125,7 @@ class StoreOperations extends BaseRepository {
     });
   }
 
-  Future<void> archiveStore({required int storeId}) async {
+  /*Future<void> archiveStore({required int storeId}) async {
     return execute(() async {
       await _dio.delete('/stores/$storeId/');
     });
@@ -361,6 +361,11 @@ class StoreOperations extends BaseRepository {
         return null;
       }
     });
+  }*/
+  String _formatDate(DateTime date) {
+    return "${date.year.toString().padLeft(4, '0')}-"
+        "${date.month.toString().padLeft(2, '0')}-"
+        "${date.day.toString().padLeft(2, '0')}";
   }
 
   Future<dynamic> getRevenueAnalytics({
