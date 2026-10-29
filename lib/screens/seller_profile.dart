@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/analytics_screen.dart';
+import 'package:kisekae/screens/mystore_screen.dart';
 import 'package:kisekae/screens/seller_invite.dart';
 import 'package:kisekae/screens/store_order.dart';
+import 'package:kisekae/screens/team_access.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/email_auth.dart';
 
 class ProfileScreen extends StatefulWidget {
   final int storeId;
-  const ProfileScreen({super.key, required this.storeId});
+  final String? myRole;
+
+  const ProfileScreen({super.key, required this.storeId, this.myRole});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -34,6 +38,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => AnalyticsScreen(storeId: widget.storeId),
+      ),
+    );
+  }
+
+  void _openStoreInformation() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => MyStoreScreen(storeId: widget.storeId)),
+    );
+  }
+
+  void _openTeamAccess() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            TeamAccessScreen(storeId: widget.storeId, myRole: widget.myRole),
       ),
     );
   }
@@ -191,12 +210,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final quickActions = <(IconData, String, VoidCallback)>[
       (Icons.inventory_2_outlined, 'Orders', _openOrders),
       (Icons.bar_chart, 'Analytics', _openAnalytics),
-      (
-        Icons.storefront,
-        'Store Information',
-        () => _comingSoon('Store Information'),
-      ),
-      (Icons.groups, 'Team Access', () => _comingSoon('Team Access')),
+      (Icons.storefront, 'Store Information', _openStoreInformation),
+      (Icons.groups, 'Team Access', _openTeamAccess),
     ];
     return Scaffold(
       backgroundColor: cs.surface,
