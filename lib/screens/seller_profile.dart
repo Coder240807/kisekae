@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/analytics_screen.dart';
+import 'package:kisekae/screens/mystore_screen.dart';
 import 'package:kisekae/screens/seller_invite.dart';
 import 'package:kisekae/screens/store_order.dart';
 import 'package:kisekae/screens/team_access.dart';
@@ -38,6 +39,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       MaterialPageRoute(
         builder: (_) => AnalyticsScreen(storeId: widget.storeId),
       ),
+    );
+  }
+
+  void _openStoreInformation() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => MyStoreScreen(storeId: widget.storeId)),
     );
   }
 
@@ -203,11 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final quickActions = <(IconData, String, VoidCallback)>[
       (Icons.inventory_2_outlined, 'Orders', _openOrders),
       (Icons.bar_chart, 'Analytics', _openAnalytics),
-      (
-        Icons.storefront,
-        'Store Information',
-        () => _comingSoon('Store Information'),
-      ),
+      (Icons.storefront, 'Store Information', _openStoreInformation),
       (Icons.groups, 'Team Access', _openTeamAccess),
     ];
     return Scaffold(
