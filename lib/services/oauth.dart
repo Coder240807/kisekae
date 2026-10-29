@@ -7,22 +7,15 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:kisekae/models/auth_response.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/storage.dart';
-
-class AuthResponse {
-  final bool success;
-  final String message;
-  final Map<String, dynamic>? data;
-
-  AuthResponse(this.success, this.message, [this.data]);
-}
 
 class SocialAuth {
   final Dio dio = DioClient.dio;
   final TokenStorage _tokenStorage = TokenStorage();
 
-  Future<AuthResponse> signInWithGoogle() {
+  Future<AuthResponse> signInWithGoogle({required bool isSeller}) {
     final isIOS = Platform.isIOS;
     final clientId = dotenv.get(
       isIOS ? 'GOOGLE_IOS_CLIENT_ID' : 'GOOGLE_ANDROID_CLIENT_ID',
@@ -58,7 +51,7 @@ class SocialAuth {
     );
   }
 
-  Future<AuthResponse> signInWithGitHub() {
+  Future<AuthResponse> signInWithGitHub({required bool isSeller}) {
     final callback = dotenv.get('GITHUB_CALLBACK_URL');
     final state = _randomState();
 
@@ -138,6 +131,8 @@ class SocialAuth {
     if (!await _saveToken(response.data)) {
       return AuthResponse(false, "Token missing from body.");
     }
+    await _tokenStorage.deleteEmail();
+
     return AuthResponse(
       true,
       response.data["message"]?.toString() ?? "",

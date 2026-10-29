@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kisekae/models/auth_response.dart';
 import 'package:kisekae/screens/forgot_password.dart';
 import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/screens/password.dart';
+import 'package:kisekae/screens/seller_gate_screen.dart';
+import 'package:kisekae/screens/seller_onboarding_screen.dart';
 import 'package:kisekae/screens/signin_otp.dart';
 import 'package:kisekae/screens/verify_code.dart';
 import 'package:kisekae/services/email_auth.dart';
 import 'package:kisekae/services/oauth.dart';
+import 'package:kisekae/services/post_auth.dart';
 
 class Signin extends StatefulWidget {
   final bool isSeller;
@@ -19,9 +23,7 @@ class Signin extends StatefulWidget {
 class _SigninState extends State<Signin> {
   final _form = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
-  //final TextEditingController _passwordController = TextEditingController();
 
-  //bool _obscurePassword = true;
   bool _loading = false;
   bool _isOauthLoading = false;
 
@@ -95,16 +97,21 @@ class _SigninState extends State<Signin> {
     }
   }*/
 
-  Future<void> _googleAuth() async {
+  /*Future<void> _googleAuth() async {
     if (_loading || _isOauthLoading) return;
     setState(() => _isOauthLoading = true);
     try {
-      final response = await SocialAuth().signInWithGoogle();
+      final response = await SocialAuth().signInWithGoogle(
+        isSeller: widget.isSeller,
+      );
       if (!mounted) return;
       if (response.success) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (_) =>
+                widget.isSeller ? const SellerGateScreen() : const HomeScreen(),
+          ),
           (route) => false,
         );
       }
@@ -125,12 +132,17 @@ class _SigninState extends State<Signin> {
     if (_loading || _isOauthLoading) return;
     setState(() => _isOauthLoading = true);
     try {
-      final response = await SocialAuth().signInWithGitHub();
+      final response = await SocialAuth().signInWithGitHub(
+        isSeller: widget.isSeller,
+      );
       if (!mounted) return;
       if (response.success) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (_) =>
+                widget.isSeller ? const SellerGateScreen() : const HomeScreen(),
+          ),
           (route) => false,
         );
       }
@@ -145,7 +157,37 @@ class _SigninState extends State<Signin> {
     } finally {
       if (mounted) setState(() => _isOauthLoading = false);
     }
+  }*/
+
+  Future<void> _oauth(
+    Future<AuthResponse> Function({required bool isSeller}) signIn,
+  ) async {
+    if (_loading || _isOauthLoading) return;
+    setState(() => _isOauthLoading = true);
+    try {
+      final response = await signIn(isSeller: widget.isSeller);
+      if (!mounted) return;
+
+      if (response.success) {
+        await PostAuth.afterAuth(context, response, picked: widget.isSeller);
+        return;
+      }
+
+      if (response.message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isOauthLoading = false);
+    }
   }
+
+  Future<void> _googleAuth() => _oauth(SocialAuth().signInWithGoogle);
+  Future<void> _githubAuth() => _oauth(SocialAuth().signInWithGitHub);
 
   @override
   void dispose() {

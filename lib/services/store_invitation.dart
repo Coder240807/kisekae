@@ -1,72 +1,39 @@
 import 'package:dio/dio.dart';
-import 'package:kisekae/models/invite.dart';
+import 'package:kisekae/models/store_invitation.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/helper.dart';
 
-class StoreInvitation extends BaseRepository {
+class StoreInvitations extends BaseRepository {
   final Dio _dio;
 
-  StoreInvitation([Dio? dio]) : _dio = dio ?? DioClient.dio;
+  StoreInvitations([Dio? dio]) : _dio = dio ?? DioClient.dio;
 
-  Future<List<InvitationSellerStore>> getStoreInvitations({
-    required int storeId,
-    String? status,
-  }) async {
+  Future<List<StoreInvitation>> getInvitations() async {
     return execute(() async {
-      final response = await _dio.get(
-        '/stores/$storeId/invitations/',
-        queryParameters: {
-          if (status != null && status.isNotEmpty) 'status': status,
-        },
-      );
+      final response = await _dio.get('/stores/invitations/');
 
-      final List data = response.data as List;
+      final body = Map<String, dynamic>.from(response.data as Map);
+      final data = body['data'] as List<dynamic>? ?? [];
+
       return data
           .map(
-            (json) =>
-                InvitationSellerStore.fromJson(json as Map<String, dynamic>),
+            (item) => StoreInvitation.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
           )
           .toList();
     });
   }
 
-  Future<InvitationSellerStore> inviteSeller({
-    required int storeId,
-    required String email,
-  }) async {
+  Future<void> acceptInvitation(int invitationId) async {
     return execute(() async {
-      final response = await _dio.post(
-        '/stores/$storeId/invitations/',
-        data: {'email': email},
-      );
-
-      return InvitationSellerStore.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      await _dio.post('/stores/invitations/$invitationId/accept/');
     });
   }
 
-  Future<void> revokeInvitation({
-    required int storeId,
-    required int invitationId,
-  }) async {
+  Future<void> declineInvitation(int invitationId) async {
     return execute(() async {
-      await _dio.delete('/stores/$storeId/invitations/$invitationId/');
-    });
-  }
-
-  Future<InvitationSellerStore> resendInvitation({
-    required int storeId,
-    required int invitationId,
-  }) async {
-    return execute(() async {
-      final response = await _dio.post(
-        '/stores/$storeId/invitations/$invitationId/resend/',
-      );
-
-      return InvitationSellerStore.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      await _dio.post('/stores/invitations/$invitationId/decline/');
     });
   }
 }

@@ -1,81 +1,52 @@
-class Summary {
+class SellerInvitation {
   final int id;
-  final String name;
-  final String slug;
-  final String? logoUrl;
-
-  Summary({
-    required this.id,
-    required this.name,
-    required this.slug,
-    this.logoUrl,
-  });
-
-  factory Summary.fromJson(Map<String, dynamic> json) {
-    return Summary(
-      id: json['id'] as int,
-      name: json['name'] as String? ?? '',
-      slug: json['slug'] as String? ?? '',
-      logoUrl: json['logo_url'] as String?,
-    );
-  }
-}
-
-class UserSummary {
-  final int id;
-  final String name;
-  final String email;
-
-  UserSummary({required this.id, required this.name, required this.email});
-
-  factory UserSummary.fromJson(Map<String, dynamic> json) {
-    return UserSummary(
-      id: json['id'] as int,
-      name: json['name'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-    );
-  }
-}
-
-class InvitationSellerStore {
-  final int id;
-  final Summary store;
+  final int storeId;
+  final String storeName;
+  final String storeSlug;
+  final String? storeLogoUrl;
   final String email;
   final String status;
-  final UserSummary invitedBy;
+  final String invitedByName;
+  final String invitedByEmail;
   final DateTime? expiresAt;
-  final DateTime? createdAt;
+  final DateTime createdAt;
   final DateTime? respondedAt;
 
-  InvitationSellerStore({
+  SellerInvitation({
     required this.id,
-    required this.store,
+    required this.storeId,
+    required this.storeName,
+    required this.storeSlug,
+    this.storeLogoUrl,
     required this.email,
     required this.status,
-    required this.invitedBy,
+    required this.invitedByName,
+    required this.invitedByEmail,
     this.expiresAt,
-    this.createdAt,
+    required this.createdAt,
     this.respondedAt,
   });
 
-  factory InvitationSellerStore.fromJson(Map<String, dynamic> json) {
-    return InvitationSellerStore(
-      id: json['id'] as int,
-      store: Summary.fromJson(json['store'] as Map<String, dynamic>),
+  factory SellerInvitation.fromJson(Map<String, dynamic> json) {
+    final store = json['store'] as Map<String, dynamic>? ?? {};
+    final invitedBy = json['invited_by'] as Map<String, dynamic>? ?? {};
+    final logo = store['logo_url'] as String?;
+
+    return SellerInvitation(
+      id: json['id'] as int? ?? 0,
+      storeId: store['id'] as int? ?? 0,
+      storeName: store['name'] as String? ?? '',
+      storeSlug: store['slug'] as String? ?? '',
+      storeLogoUrl: (logo == null || logo.isEmpty) ? null : logo,
       email: json['email'] as String? ?? '',
       status: json['status'] as String? ?? 'PENDING',
-      invitedBy: UserSummary.fromJson(
-        json['invited_by'] as Map<String, dynamic>,
-      ),
-      expiresAt: json['expires_at'] != null
-          ? DateTime.tryParse(json['expires_at'].toString())
-          : null,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'].toString())
-          : null,
-      respondedAt: json['responded_at'] != null
-          ? DateTime.tryParse(json['responded_at'].toString())
-          : null,
+      invitedByName: invitedBy['name'] as String? ?? '',
+      invitedByEmail: invitedBy['email'] as String? ?? '',
+      expiresAt: DateTime.tryParse(json['expires_at']?.toString() ?? ''),
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+      respondedAt: DateTime.tryParse(json['responded_at']?.toString() ?? ''),
     );
   }
 }

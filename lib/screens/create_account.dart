@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kisekae/models/auth_response.dart';
 import 'package:kisekae/screens/home_screen.dart';
+import 'package:kisekae/screens/seller_gate_screen.dart';
 import 'package:kisekae/screens/verify_code.dart';
 import 'package:kisekae/services/email_auth.dart';
 import 'package:kisekae/services/oauth.dart';
+import 'package:kisekae/services/post_auth.dart';
+import 'package:kisekae/services/storage.dart';
 
 class CreateAccount extends StatefulWidget {
   final bool isSeller;
@@ -30,10 +34,6 @@ class _CreateAccountState extends State<CreateAccount> {
   void _submitForm() async {
     if (_loading || _isOauthLoading) return;
 
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final isSeller = args?['selectedRole'] == 'seller';
-
     if (_form.currentState!.validate()) {
       setState(() => _loading = true);
       try {
@@ -45,19 +45,16 @@ class _CreateAccountState extends State<CreateAccount> {
           isSeller: widget.isSeller,
         );
         if (!mounted) return;
+
         if (response.success) {
-          final otpResponse = await EmailAuth().sendOtp(
-            email,
-            purpose: "verify_email",
-          );
+          await TokenStorage().saveEmail(email);
           if (!mounted) return;
-          if (otpResponse.message.isNotEmpty) {
+
+          if (response.message.isNotEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(otpResponse.message),
-                backgroundColor: otpResponse.success
-                    ? Colors.green
-                    : Colors.red,
+                content: Text(response.message),
+                backgroundColor: Colors.green,
               ),
             );
           }
@@ -80,23 +77,26 @@ class _CreateAccountState extends State<CreateAccount> {
           );
         }
       } finally {
-        if (mounted) {
-          setState(() => _loading = false);
-        }
+        if (mounted) setState(() => _loading = false);
       }
     }
   }
 
-  Future<void> _googleAuth() async {
+  /*Future<void> _googleAuth() async {
     if (_loading || _isOauthLoading) return;
     setState(() => _isOauthLoading = true);
     try {
-      final response = await SocialAuth().signInWithGoogle();
+      final response = await SocialAuth().signInWithGoogle(
+        isSeller: widget.isSeller,
+      );
       if (!mounted) return;
       if (response.success) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (_) =>
+                widget.isSeller ? const SellerGateScreen() : const HomeScreen(),
+          ),
           (route) => false,
         );
       }
@@ -117,12 +117,17 @@ class _CreateAccountState extends State<CreateAccount> {
     if (_loading || _isOauthLoading) return;
     setState(() => _isOauthLoading = true);
     try {
-      final response = await SocialAuth().signInWithGitHub();
+      final response = await SocialAuth().signInWithGitHub(
+        isSeller: widget.isSeller,
+      );
       if (!mounted) return;
       if (response.success) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (_) =>
+                widget.isSeller ? const SellerGateScreen() : const HomeScreen(),
+          ),
           (route) => false,
         );
       }
@@ -137,8 +142,37 @@ class _CreateAccountState extends State<CreateAccount> {
     } finally {
       if (mounted) setState(() => _isOauthLoading = false);
     }
+  }*/
+
+  Future<void> _oauth(
+    Future<AuthResponse> Function({required bool isSeller}) signIn,
+  ) async {
+    if (_loading || _isOauthLoading) return;
+    setState(() => _isOauthLoading = true);
+    try {
+      final response = await signIn(isSeller: widget.isSeller);
+      if (!mounted) return;
+
+      if (response.success) {
+        await PostAuth.afterAuth(context, response, picked: widget.isSeller);
+        return;
+      }
+
+      if (response.message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isOauthLoading = false);
+    }
   }
 
+  Future<void> _googleAuth() => _oauth(SocialAuth().signInWithGoogle);
+  Future<void> _githubAuth() => _oauth(SocialAuth().signInWithGitHub);
   @override
   void dispose() {
     _nameController.dispose();

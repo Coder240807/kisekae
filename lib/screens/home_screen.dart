@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/screens/addresses.dart';
 import 'package:kisekae/screens/products_list.dart';
-import 'package:kisekae/screens/search.dart';
 import 'package:kisekae/screens/categories.dart';
 import 'package:kisekae/screens/wishlist_screen.dart';
 import 'package:kisekae/widgets/best_deals.dart';

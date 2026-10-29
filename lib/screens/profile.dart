@@ -6,7 +6,10 @@ import "package:kisekae/screens/onboarding_screen.dart";
 import "package:kisekae/screens/personal_details.dart";
 import "package:kisekae/screens/terms_conditions.dart";
 import "package:kisekae/screens/wishlist_screen.dart";
+import "package:kisekae/services/account_service.dart";
 import "package:kisekae/services/email_auth.dart";
+import "package:kisekae/services/post_auth.dart";
+import "package:kisekae/services/storage.dart";
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -17,6 +20,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoggingOut = false;
+  bool _isSeller = false;
+  bool _upgrading = false;
 
   Future<void> _logout() async {
     if (_isLoggingOut) return;
@@ -42,6 +47,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } finally {
       if (mounted) setState(() => _isLoggingOut = false);
     }
+  }
+
+  Future<void> _openSellerSide() async {
+    if (_upgrading) return;
+
+    if (_isSeller) {
+      await PostAuth.openSide(context, seller: true);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Become a seller?"),
+        content: const Text(
+          "Your account will be upgraded so you can create or join a store. "
+          "You can still shop as a buyer at any time.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Continue"),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _upgrading = true);
+    final result = await AccountService().becomeSeller();
+    if (!mounted) return;
+    setState(() => _upgrading = false);
+
+    if (!result.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => _isSeller = true);
+    await PostAuth.openSide(context, seller: true);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    TokenStorage().readIsSeller().then((value) {
+      if (mounted) setState(() => _isSeller = value);
+    });
   }
 
   @override
@@ -170,6 +229,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   MaterialPageRoute(builder: (_) => const AddressesScreen()),
                 );
               },
+            ),
+            const SizedBox(height: 16),
+            actionChip(
+              Icons.storefront_outlined,
+              _isSeller ? "Seller mode" : "Become a seller",
+              isLoading: _upgrading,
+              onTap: _upgrading ? null : _openSellerSide,
             ),
             const SizedBox(height: 16),
             actionChip(

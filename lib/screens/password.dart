@@ -6,6 +6,7 @@ import 'package:kisekae/screens/seller_start.dart';
 import 'package:kisekae/screens/signin_otp.dart';
 import 'package:kisekae/screens/verify_code.dart';
 import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/services/post_auth.dart';
 import 'package:kisekae/services/storage.dart';
 
 class SigninPassword extends StatefulWidget {
@@ -37,17 +38,9 @@ class _SigninPasswordState extends State<SigninPassword> {
       if (!mounted) return;
 
       if (response.success) {
-        await TokenStorage().saveIsSeller(widget.isSeller);
+        await TokenStorage().saveEmail(widget.email);
         if (!mounted) return;
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => widget.isSeller
-                ? const StoreSelectionScreen()
-                : const HomeScreen(),
-          ),
-          (route) => false,
-        );
+        await PostAuth.afterAuth(context, response, picked: widget.isSeller);
         return;
       }
 
@@ -81,7 +74,7 @@ class _SigninPasswordState extends State<SigninPassword> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response.message),
-            backgroundColor: response.success ? Colors.green : Colors.red,
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -199,7 +192,10 @@ class _SigninPasswordState extends State<SigninPassword> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SigninOtp(email: widget.email),
+                          builder: (context) => SigninOtp(
+                            email: widget.email,
+                            isSeller: widget.isSeller,
+                          ),
                         ),
                       );
                     },

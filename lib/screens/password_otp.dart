@@ -245,7 +245,14 @@ class _PasswordOTPState extends State<PasswordOTP> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(
+                        1,
+                        maxLengthEnforcement:
+                            MaxLengthEnforcement.truncateAfterCompositionEnds,
+                      ),
+                    ],
                     onChanged: (value) => _onChanged(value, index),
                     decoration: InputDecoration(
                       helperText: ' ',
