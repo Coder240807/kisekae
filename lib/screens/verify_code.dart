@@ -7,6 +7,7 @@ import 'package:kisekae/screens/dashboard.dart';
 import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/screens/seller_start.dart';
 import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/services/post_auth.dart';
 import 'package:kisekae/services/storage.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
@@ -172,7 +173,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     setState(() => _loading = false);
 
     if (response.success) {
-      await TokenStorage().saveIsSeller(widget.isSeller);
+      await TokenStorage().saveEmail(widget.email);
       if (!mounted) return;
 
       if (response.message.isNotEmpty) {
@@ -184,11 +185,15 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
         );
       }
 
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        widget.isSeller ? '/seller-store' : '/home',
-        (route) => false,
+      await PostAuth.afterAuth(context, response, picked: widget.isSeller);
+    } else if (response.message.toLowerCase().contains('expired')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Your sign-up expired. Please register again.'),
+          backgroundColor: Colors.red,
+        ),
       );
+      Navigator.popUntil(context, (route) => route.isFirst);
     } else {
       setState(() {
         _hasError = true;
@@ -295,7 +300,14 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(
+                          1,
+                          maxLengthEnforcement:
+                              MaxLengthEnforcement.truncateAfterCompositionEnds,
+                        ),
+                      ],
                       onChanged: (value) => _onChanged(value, index),
                       decoration: InputDecoration(
                         helperText: ' ',

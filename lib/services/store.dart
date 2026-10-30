@@ -51,7 +51,7 @@ class StoreOperations extends BaseRepository {
 
       final response = await _dio.get('/stores/', queryParameters: queryParams);
 
-      debugPrint('GET STORES RAW: ${response.data}'); // temporary
+      debugPrint('GET STORES RAW: ${response.data}');
 
       final body = response.data;
       Map<String, dynamic> payload;
@@ -74,19 +74,26 @@ class StoreOperations extends BaseRepository {
   Future<Store> createStore({
     required String name,
     required String description,
-    required String contactEmail,
-    required String contactPhone,
+    required File logo,
+    required File banner,
+    String? websiteLink,
+    String? instagramLink,
+    String? contactEmail,
+    String? contactPhone,
   }) async {
     return execute(() async {
-      final response = await _dio.post(
-        '/stores/',
-        data: {
-          'name': name,
-          'description': description,
-          'contact_email': contactEmail,
-          'contact_phone': contactPhone,
-        },
-      );
+      final formData = FormData.fromMap({
+        'name': name,
+        'description': description,
+        'logo': await _imagePart(logo),
+        'banner': await _imagePart(banner),
+        if (websiteLink != null) 'website_link': websiteLink,
+        if (instagramLink != null) 'instagram_link': instagramLink,
+        if (contactEmail != null) 'contact_email': contactEmail,
+        if (contactPhone != null) 'contact_phone': contactPhone,
+      });
+
+      final response = await _dio.post('/stores/', data: formData);
       final body = response.data as Map<String, dynamic>;
       return Store.fromJson((body['data'] ?? body) as Map<String, dynamic>);
     });
@@ -99,7 +106,7 @@ class StoreOperations extends BaseRepository {
     });
   }
 
-  Future<Store> updateStore({
+  /*Future<Store> updateStore({
     required int storeId,
     String? name,
     String? description,
@@ -116,9 +123,58 @@ class StoreOperations extends BaseRepository {
       final response = await _dio.patch('/stores/$storeId', data: payload);
       return Store.fromJson(response.data as Map<String, dynamic>);
     });
+  }*/
+
+  Future<Store> getStore(int storeId) async {
+    return execute(() async {
+      final response = await _dio.get('/stores/$storeId/');
+      final body = Map<String, dynamic>.from(response.data as Map);
+      return Store.fromJson(
+        Map<String, dynamic>.from((body['data'] ?? body) as Map),
+      );
+    });
   }
 
-  Future<void> archiveStore({required int storeId}) async {
+  Future<Store> updateStore(
+    int storeId, {
+    String? name,
+    String? description,
+    File? logo,
+    File? banner,
+    String? websiteLink,
+    String? instagramLink,
+    String? contactEmail,
+    String? contactPhone,
+    String? status,
+  }) async {
+    return execute(() async {
+      final formData = FormData.fromMap({
+        if (name != null) 'name': name,
+        if (description != null) 'description': description,
+        if (logo != null) 'logo': await _imagePart(logo),
+        if (banner != null) 'banner': await _imagePart(banner),
+        if (websiteLink != null) 'website_link': websiteLink,
+        if (instagramLink != null) 'instagram_link': instagramLink,
+        if (contactEmail != null) 'contact_email': contactEmail,
+        if (contactPhone != null) 'contact_phone': contactPhone,
+        if (status != null) 'status': status,
+      });
+
+      final response = await _dio.put('/stores/$storeId/', data: formData);
+      final body = Map<String, dynamic>.from(response.data as Map);
+      return Store.fromJson(
+        Map<String, dynamic>.from((body['data'] ?? body) as Map),
+      );
+    });
+  }
+
+  Future<void> archiveStore(int storeId) async {
+    return execute(() async {
+      await _dio.delete('/stores/$storeId/');
+    });
+  }
+
+  /*Future<void> archiveStore({required int storeId}) async {
     return execute(() async {
       await _dio.delete('/stores/$storeId/');
     });
@@ -354,6 +410,11 @@ class StoreOperations extends BaseRepository {
         return null;
       }
     });
+  }*/
+  String _formatDate(DateTime date) {
+    return "${date.year.toString().padLeft(4, '0')}-"
+        "${date.month.toString().padLeft(2, '0')}-"
+        "${date.day.toString().padLeft(2, '0')}";
   }
 
   Future<dynamic> getRevenueAnalytics({
@@ -383,5 +444,20 @@ class StoreOperations extends BaseRepository {
       final body = response.data as Map<String, dynamic>;
       return body['data'];
     });
+  }
+
+  Future<MultipartFile> _imagePart(File file) {
+    final name = file.path.split('/').last;
+    final ext = name.split('.').last.toLowerCase();
+    final mime = switch (ext) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      _ => 'image/jpeg',
+    };
+    return MultipartFile.fromFile(
+      file.path,
+      filename: name,
+      contentType: DioMediaType.parse(mime),
+    );
   }
 }

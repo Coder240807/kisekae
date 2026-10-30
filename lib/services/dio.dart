@@ -68,6 +68,12 @@ class DioClient {
             if (result.token != null) {
               options.headers['Authorization'] = 'Bearer ${result.token}';
               options.extra['retried'] = true;
+
+              // A FormData can only be sent once, so give the retry a
+              // fresh copy (covers image uploads and invites).
+              final body = options.data;
+              if (body is FormData) options.data = body.clone();
+
               try {
                 return handler.resolve(await dio.fetch(options));
               } on DioException catch (retryError) {
@@ -137,5 +143,10 @@ class DioClient {
   static Future<void> clearSession() async {
     await TokenStorage().deleteAll();
     await cookieJar.deleteAll();
+  }
+
+  static Future<bool> refreshToken() async {
+    final result = await _refreshAccessToken();
+    return result.token != null;
   }
 }

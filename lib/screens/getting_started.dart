@@ -11,9 +11,6 @@ class GettingStartedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-
     return Theme(
       data: Theme.of(context).copyWith(
         textTheme: Theme.of(context).textTheme.apply(fontFamily: 'sans-serif'),

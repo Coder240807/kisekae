@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/services/post_auth.dart';
+import 'package:kisekae/services/storage.dart';
 
 class SigninOtp extends StatefulWidget {
   final String email;
-  const SigninOtp({super.key, required this.email});
+  final bool isSeller;
+  const SigninOtp({super.key, required this.email, required this.isSeller});
 
   @override
   State<SigninOtp> createState() => _SigninOtpState();
@@ -152,25 +155,17 @@ class _SigninOtpState extends State<SigninOtp> {
       );
       if (!mounted) return;
       if (response.success) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-          (route) => false,
-        );
+        await TokenStorage().saveEmail(widget.email);
+        if (!mounted) return;
+        await PostAuth.afterAuth(context, response, picked: widget.isSeller);
         return;
       }
       setState(() {
         _hasError = true;
-        _errorText = "Incorrect code. Please try again.";
+        _errorText = response.message.isNotEmpty
+            ? response.message
+            : "Incorrect code. Please try again.";
       });
-      if (response.message.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response.message),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     } finally {
       if (mounted) setState(() => _verifying = false);
     }
@@ -233,7 +228,14 @@ class _SigninOtpState extends State<SigninOtp> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(
+                        1,
+                        maxLengthEnforcement:
+                            MaxLengthEnforcement.truncateAfterCompositionEnds,
+                      ),
+                    ],
                     onChanged: (value) => _onOtpChanged(value, index),
                     decoration: InputDecoration(
                       helperText: ' ',

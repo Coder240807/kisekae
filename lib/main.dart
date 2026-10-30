@@ -12,6 +12,7 @@ import 'package:kisekae/screens/sellergate_screen.dart';
 import 'package:kisekae/screens/tryon_history.dart';
 import 'package:kisekae/core/notifications/background_handler.dart';
 import 'package:kisekae/core/notifications/notification_service.dart';
+import 'package:kisekae/screens/seller_gate_screen.dart';
 
 import 'package:kisekae/services/profile_details.dart';
 import 'package:kisekae/services/dio.dart';
@@ -28,17 +29,22 @@ void main() async {
     ProfileDetails().updateFCMToken,
   );
 
-  final token = await TokenStorage().readAccessToken();
+  final storage = TokenStorage();
+  final token = await storage.readAccessToken();
   final bool isLoggedIn = token != null && token.isNotEmpty;
-  final bool isSeller = isLoggedIn && await TokenStorage().readIsSeller();
 
-  runApp(MyApp(isLoggedIn: isLoggedIn, isSeller: isSeller));
+  final bool openSeller =
+      isLoggedIn &&
+      await storage.readIsSeller() &&
+      await storage.readMode() == 'seller';
+
+  runApp(MyApp(isLoggedIn: isLoggedIn, openSeller: openSeller));
 }
 
 class MyApp extends StatefulWidget {
   final bool isLoggedIn;
-  final bool isSeller;
-  const MyApp({super.key, required this.isLoggedIn, required this.isSeller});
+  final bool openSeller;
+  const MyApp({super.key, required this.isLoggedIn, required this.openSeller});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -88,7 +94,7 @@ class _MyAppState extends State<MyApp> {
       navigatorKey: navigatorKey,
       routes: {
         '/onboarding': (context) => OnboardingScreen(onThemeChanged: _setDark),
-        '/seller-store': (context) => const StoreSelectionScreen(),
+        '/seller-store': (context) => const SellerGateScreen(),
         '/login': (context) => const GettingStartedScreen(),
         '/home': (context) => const HomeScreen(),
       },
@@ -123,6 +129,6 @@ class _MyAppState extends State<MyApp> {
   Widget _startScreen() {
     if (!widget.isLoggedIn) return OnboardingScreen(onThemeChanged: _setDark);
 
-    return widget.isSeller ? const SellerGateScreen() : const HomeScreen();
+    return widget.openSeller ? const SellerGateScreen() : const HomeScreen();
   }
 }
