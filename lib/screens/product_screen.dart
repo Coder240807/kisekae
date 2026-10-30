@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/product_detail.dart';
 import 'package:kisekae/models/product_review.dart';
+import 'package:kisekae/models/recommend_combos.dart';
+import 'package:kisekae/models/similar_product.dart';
+import 'package:kisekae/models/tryon_combo_model.dart';
 import 'package:kisekae/models/user_address.dart';
 import 'package:kisekae/models/wishlist.dart';
 import 'package:kisekae/screens/ar_screen.dart';
@@ -13,8 +16,11 @@ import 'package:kisekae/services/buyer_address.dart';
 import 'package:kisekae/services/buyer_product.dart';
 
 import 'package:kisekae/services/cart_service.dart';
+import 'package:kisekae/services/combo_service.dart';
 import 'package:kisekae/services/profile_details.dart';
 import 'package:kisekae/services/reviews_service.dart';
+import 'package:kisekae/services/similar_product_service.dart';
+import 'package:kisekae/services/tryon_service.dart';
 import 'package:kisekae/services/wishlist_service.dart';
 import 'package:kisekae/widgets/add_to_combo.dart';
 
@@ -34,6 +40,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final AddressService _addressService = AddressService();
   final ReviewService _reviewService = ReviewService();
   final ProfileDetails _profileService = ProfileDetails();
+  final SimilarProductsService _similarService = SimilarProductsService();
+  final ComboService _comboService = ComboService();
+  final TryOnService _tryOnService = TryOnService();
+  List<ComboLook> _combos = [];
+  bool _isLoadingCombos = true;
+  List<SimilarProduct> _similar = [];
+  bool _isLoadingSimilar = true;
+  final Map<String, bool> _savingComboIds = {};
+  final Set<String> _addedComboIds = {};
 
   CancelToken? _cancelToken;
   ProductDetail? _product;
@@ -57,6 +72,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
+    _loadCombos();
+    _loadSimilar();
     _loadCurrentUserId();
   }
 
@@ -125,6 +142,37 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           : 'Failed to load product details';
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<void> _loadCombos() async {
+    try {
+      final response = await _comboService.getRecommendedCombos(
+        widget.productId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _combos = response.data;
+      });
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isLoadingCombos = false);
+    }
+  }
+
+  Future<void> _loadSimilar() async {
+    try {
+      final items = await _similarService.getSimilar(
+        widget.productId,
+        cancelToken: _cancelToken,
+      );
+      if (!mounted) return;
+      setState(
+        () => _similar = items.where((p) => p.id != widget.productId).toList(),
+      );
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isLoadingSimilar = false);
     }
   }
 
@@ -260,6 +308,55 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           .showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _isAddingToCart = false);
+    }
+  }
+
+  Future<void> _handleAddCombo(ComboLook combo) async {
+    setState(() {
+      _savingComboIds[combo.id] = true;
+    });
+
+    try {
+      final TryOnCombo savedCombo = await _tryOnService.createCombo(
+        name: combo.title,
+        productIds: combo.productIds,
+      );
+
+      if (!mounted) return;
+
+      // Mark as added to update button state
+      setState(() {
+        _addedComboIds.add(combo.id);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Combo '${savedCombo.name}' saved to your profile!"),
+          backgroundColor: const Color(0xFF8B2E3E),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      final errorMessage = e
+          .toString()
+          .replaceAll("ApiException: ", "")
+          .replaceAll("Exception: ", "");
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _savingComboIds[combo.id] = false;
+        });
+      }
     }
   }
 
@@ -956,6 +1053,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
+                _recommendedCombosSection(),
+                _similarSection(),
 
                 const Text(
                   "Ratings & Review",
@@ -1093,6 +1192,425 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       'Dec',
     ];
     return '${date.day} ${months[date.month - 1]}, ${date.year}';
+  }
+
+  Widget _recommendedCombosSection() {
+    if (!_isLoadingCombos && _combos.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Complete the Look",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 295,
+          child: _isLoadingCombos
+              ? ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 3,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, __) => Container(
+                    width: 250,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0D8CD),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _combos.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, i) => _comboCard(_combos[i]),
+                ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _comboCard(ComboLook combo) {
+    const primaryColor = Color(0xFF8B2E3E);
+    final symbol = _currencySymbol(combo.currency);
+    final totalPrice = double.tryParse(combo.totalPrice) ?? 0.0;
+    final isSaving = _savingComboIds[combo.id] ?? false;
+    final isAdded = _addedComboIds.contains(combo.id);
+
+    return Container(
+      width: 250,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE0D8CD), width: 1),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title & Try-On Badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  combo.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              if (combo.isTryonReady)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    "TRY-ON",
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Thumbnails list
+          SizedBox(
+            height: 110,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: combo.items.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, index) =>
+                  _comboItemThumbnail(combo.items[index]),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Product names summary
+          SizedBox(
+            height: 32,
+            child: Text(
+              combo.items.map((e) => e.product.name).join(" + "),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                color: Colors.black87,
+                height: 1.2,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFE0D8CD)),
+          const SizedBox(height: 10),
+
+          // Price & Action Button Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "${combo.items.length} Items",
+                    style: const TextStyle(fontSize: 10, color: Colors.black45),
+                  ),
+                  Text(
+                    "$symbol${_formatPrice(totalPrice.toString())}",
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: (isSaving || isAdded)
+                    ? null
+                    : () => _handleAddCombo(combo),
+                borderRadius: BorderRadius.circular(12),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isAdded
+                        ? Colors.grey.shade300
+                        : (isSaving
+                              ? primaryColor.withOpacity(0.6)
+                              : primaryColor),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          height: 14,
+                          width: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isAdded) ...[
+                              const Icon(
+                                Icons.check,
+                                size: 13,
+                                color: Colors.black54,
+                              ),
+                              const SizedBox(width: 4),
+                            ],
+                            Text(
+                              isAdded ? "Added" : "Add Combo",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isAdded ? Colors.black54 : Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _comboItemThumbnail(RecommendedComboItem item) {
+    final product = item.product;
+    final imageUrl = product.thumbnail ?? product.imageUrl;
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ProductDetailsScreen(productId: product.id),
+        ),
+      ),
+      child: Container(
+        height: 110,
+        width: 85,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0D8CD),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: (imageUrl == null || imageUrl.isEmpty)
+            ? _imagePlaceholder()
+            : Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+                errorBuilder: (_, __, ___) => _imagePlaceholder(),
+              ),
+      ),
+    );
+  }
+
+  Widget _similarSection() {
+    if (!_isLoadingSimilar && _similar.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "You may also like",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 268,
+          child: _isLoadingSimilar
+              ? ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 3,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, __) => Container(
+                    width: 150,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0D8CD),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _similar.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, i) => _similarCard(_similar[i]),
+                ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _similarCard(SimilarProduct p) {
+    const primaryColor = Color(0xFF8B2E3E);
+    final symbol = _currencySymbol(p.currency);
+    final price = double.tryParse(p.price);
+    final compare = double.tryParse(p.compareAtPrice ?? '');
+    final discount = (price != null && compare != null && compare > price)
+        ? (((compare - price) / compare) * 100).round()
+        : null;
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ProductDetailsScreen(productId: p.id),
+        ),
+      ),
+      child: SizedBox(
+        width: 150,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  height: 180,
+                  width: 150,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0D8CD),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: p.imageUrl == null
+                      ? _imagePlaceholder()
+                      : Image.network(
+                          p.imageUrl!,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                        ),
+                ),
+                if (discount != null)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        "$discount% off",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (p.reviewCount > 0)
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star, size: 12, color: Colors.amber),
+                          const SizedBox(width: 2),
+                          Text(
+                            p.averageRating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (p.storeName.isNotEmpty)
+              Text(
+                p.storeName.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            Text(
+              p.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Text(
+                  "$symbol${_formatPrice(p.price)}",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (discount != null) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    "$symbol${_formatPrice(p.compareAtPrice)}",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black45,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _reviewCard({
