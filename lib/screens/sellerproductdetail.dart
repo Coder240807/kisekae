@@ -60,25 +60,6 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
     }
   }
 
-  Future<void> _navigateToGallery(BuildContext context) async {
-    if (_product == null) return;
-
-    final didUpdateMedia = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ProductGalleryScreen(
-          storeId: widget.storeId,
-          productId: widget.productId,
-          initialPrimaryImageUrl: _product!.imageUrl,
-        ),
-      ),
-    );
-
-    if (didUpdateMedia == true) {
-      _fetchProductDetails();
-    }
-  }
-
   Future<void> _handleDeleteProduct() async {
     if (_product == null) return;
 
@@ -163,14 +144,14 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
     return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
-  Map<String, dynamic> _getStatusStyle(String status, int stock) {
-    if (stock == 0 || status.toUpperCase() == 'OUT_OF_STOCK') {
+  Map<String, dynamic> _getStatusStyle(String status, int totalStock) {
+    if (totalStock == 0 || status.toUpperCase() == 'OUT_OF_STOCK') {
       return {
         'label': 'OUT OF STOCK',
         'color': const Color(0xFFE53935),
         'bgColor': const Color(0xFFFFEBEE),
       };
-    } else if (stock < 50 || status.toUpperCase() == 'LOW_STOCK') {
+    } else if (totalStock < 50 || status.toUpperCase() == 'LOW_STOCK') {
       return {
         'label': 'LOW STOCK',
         'color': const Color(0xFFE65100),
@@ -189,6 +170,16 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
         'bgColor': const Color(0xFFEEEEEE),
       };
     }
+  }
+
+  Color? _tryParseHex(String hex) {
+    try {
+      final clean = hex.replaceFirst('#', '');
+      if (clean.length == 6) {
+        return Color(int.parse('FF$clean', radix: 16));
+      }
+    } catch (_) {}
+    return null;
   }
 
   @override
@@ -237,7 +228,7 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
     }
 
     final product = _product!;
-    final statusStyle = _getStatusStyle(product.status, product.stock);
+    final statusStyle = _getStatusStyle(product.status, product.totalStock);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -322,77 +313,37 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                 ),
                 child: Column(
                   children: [
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child:
-                              product.imageUrl != null &&
-                                  product.imageUrl!.isNotEmpty
-                              ? Image.network(
-                                  product.imageUrl!,
-                                  height: 200,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    height: 180,
-                                    width: double.infinity,
-                                    color: const Color(0xFFE5DDD2),
-                                    child: const Icon(
-                                      Icons.image_not_supported,
-                                      size: 48,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  height: 180,
-                                  width: double.infinity,
-                                  color: const Color(0xFFE5DDD2),
-                                  child: const Icon(
-                                    Icons.checkroom,
-                                    size: 48,
-                                    color: Colors.grey,
-                                  ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child:
+                          product.imageUrl != null &&
+                              product.imageUrl!.isNotEmpty
+                          ? Image.network(
+                              product.imageUrl!,
+                              height: 200,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 180,
+                                width: double.infinity,
+                                color: const Color(0xFFE5DDD2),
+                                child: const Icon(
+                                  Icons.image_not_supported,
+                                  size: 48,
+                                  color: Colors.grey,
                                 ),
-                        ),
-                        Positioned(
-                          bottom: 10,
-                          right: 10,
-                          child: GestureDetector(
-                            onTap: () => _navigateToGallery(context),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.7),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.photo_library_outlined,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "Manage Photos",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
+                            )
+                          : Container(
+                              height: 180,
+                              width: double.infinity,
+                              color: const Color(0xFFE5DDD2),
+                              child: const Icon(
+                                Icons.checkroom,
+                                size: 48,
+                                color: Colors.grey,
                               ),
                             ),
-                          ),
-                        ),
-                      ],
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -428,33 +379,6 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          side: const BorderSide(color: Color(0xFF8B2E3E)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () => _navigateToGallery(context),
-                        icon: const Icon(
-                          Icons.collections_outlined,
-                          color: Color(0xFF8B2E3E),
-                          size: 18,
-                        ),
-                        label: const Text(
-                          "Manage Gallery & Media",
-                          style: TextStyle(
-                            color: Color(0xFF8B2E3E),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -507,9 +431,9 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                           ),
                         Expanded(
                           child: _metricTile(
-                            label: "Stock Level",
-                            value: "${product.stock} units",
-                            isHighlight: product.stock < 50,
+                            label: "Total Stock",
+                            value: "${product.totalStock} units",
+                            isHighlight: product.totalStock < 50,
                           ),
                         ),
                       ],
@@ -553,6 +477,97 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                   ],
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              if (product.variants.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBackgroundColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE5DDD2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Variants (${product.variants.length})",
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const Divider(height: 20, color: Color(0xFFE5DDD2)),
+                      for (final variant in product.variants) ...[
+                        Row(
+                          children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _tryParseHex(variant.colorHex) ??
+                                    Colors.grey,
+                                border: Border.all(color: Colors.black26),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                variant.colorName,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              "${variant.totalStock} units",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: variant.totalStock < 10
+                                    ? const Color(0xFFE65100)
+                                    : Colors.black54,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (variant.sizes.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              for (final sz in variant.sizes)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEEEEEE),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    "${sz.size}: ${sz.stock}",
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                      ],
+                    ],
+                  ),
+                ),
 
               const SizedBox(height: 16),
 

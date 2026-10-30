@@ -33,7 +33,7 @@ class HandleProduct extends BaseRepository {
 
   List<dynamic> _dataList(dynamic body) {
     if (body is Map) {
-      final inner = body['data'];
+      final inner = body['data']['results'];
       if (inner is List) return inner;
       return [];
     }
@@ -41,7 +41,7 @@ class HandleProduct extends BaseRepository {
     return [];
   }
 
-  Future<PaginatedProductResponse> getStoreProducts({
+  Future<List<Product>> getStoreProducts({
     required int storeId,
     int? page,
     int? pageSize,
@@ -61,7 +61,10 @@ class HandleProduct extends BaseRepository {
         queryParameters: queryParams,
       );
 
-      return PaginatedProductResponse.fromJson(_paginated(response.data)!);
+      final list = _dataList(response.data);
+      return list
+          .map((item) => Product.fromJson(item as Map<String, dynamic>))
+          .toList();
     });
   }
 
@@ -96,27 +99,29 @@ class HandleProduct extends BaseRepository {
     required int productId,
     String? name,
     String? category,
-    String? color,
+    String? productType,
     String? description,
     String? price,
     String? compareAtPrice,
     String? currency,
     String? sku,
-    int? stock,
     String? status,
+    List<VariantInput>? variants,
   }) async {
     return execute(() async {
       final payload = <String, dynamic>{};
       if (name != null) payload['name'] = name;
       if (category != null) payload['category'] = category;
-      if (color != null) payload['color'] = color;
+      if (productType != null) payload['product_type'] = productType;
       if (description != null) payload['description'] = description;
       if (price != null) payload['price'] = price;
       if (compareAtPrice != null) payload['compare_at_price'] = compareAtPrice;
       if (currency != null) payload['currency'] = currency;
       if (sku != null) payload['sku'] = sku;
-      if (stock != null) payload['stock'] = stock;
       if (status != null) payload['status'] = status;
+      if (variants != null) {
+        payload['variants'] = variants.map((v) => v.toJson()).toList();
+      }
 
       final response = await _dio.patch(
         '/stores/$storeId/products/$productId/',
@@ -136,125 +141,148 @@ class HandleProduct extends BaseRepository {
     });
   }
 
-  Future<Product> uploadProductPrimaryImage({
+  Future<Product> addStock({
     required int storeId,
     required int productId,
-    required File imageFile,
-    CancelToken? cancelToken,
+    required int delta,
+    required int variantId,
+    required String size,
+    String reason = 'RESTOCK',
+    String notes = '',
   }) async {
     return execute(() async {
-      final fileName = imageFile.path.split('/').last;
-
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          imageFile.path,
-          filename: fileName,
-        ),
-      });
-
-      final response = await _dio.put(
-        '/stores/$storeId/products/$productId/image/',
-        data: formData,
-        cancelToken: cancelToken,
+      final response = await _dio.post(
+        '/stores/$storeId/products/$productId/stock/add/',
+        data: {
+          'delta': delta,
+          'variant_id': variantId,
+          'size': size,
+          'reason': reason,
+          'notes': notes,
+        },
       );
-
-      return Product.fromJson(_dataMap(response.data)!);
+      final outer = _dataMap(response.data);
+      final productMap = outer?['product'] as Map<String, dynamic>?;
+      return Product.fromJson(productMap ?? outer!);
     });
   }
 
-  Future<String> deleteProductPrimaryImage({
+  Future<Product> removeStock({
     required int storeId,
     required int productId,
-    CancelToken? cancelToken,
+    required int delta,
+    required int variantId,
+    required String size,
+    String reason = 'SALE',
+    String notes = '',
   }) async {
     return execute(() async {
-      final response = await _dio.delete(
-        '/stores/$storeId/products/$productId/image/',
-        cancelToken: cancelToken,
+      final response = await _dio.post(
+        '/stores/$storeId/products/$productId/stock/remove/',
+        data: {
+          'delta': delta,
+          'variant_id': variantId,
+          'size': size,
+          'reason': reason,
+          'notes': notes,
+        },
       );
-
-      if (response.data is Map) {
-        final body = Map<String, dynamic>.from(response.data as Map);
-        return body['message'] as String? ??
-            'Primary image removed successfully';
-      }
-      return 'Primary image removed successfully';
+      final outer = _dataMap(response.data);
+      final productMap = outer?['product'] as Map<String, dynamic>?;
+      return Product.fromJson(productMap ?? outer!);
     });
   }
 
-  Future<List<ProductImage>> getProductImages({
+  Future<Product> adjustStock({
     required int storeId,
     required int productId,
+    int? stock,
+    int? adjustment,
+    String reason = 'ADJUSTMENT',
+    String notes = '',
+  }) async {
+    return execute(() async {
+      final payload = <String, dynamic>{'reason': reason, 'notes': notes};
+      if (stock != null) payload['stock'] = stock;
+      if (adjustment != null) payload['adjustment'] = adjustment;
+
+      final response = await _dio.patch(
+        '/stores/$storeId/products/$productId/stock/',
+        data: payload,
+      );
+      final outer = _dataMap(response.data);
+      final productMap = outer?['product'] as Map<String, dynamic>?;
+      return Product.fromJson(productMap ?? outer!);
+    });
+  }
+
+  Future<List<ProductVariantImage>> getVariantImages({
+    required int storeId,
+    required int productId,
+    required int variantId,
     CancelToken? cancelToken,
   }) async {
     return execute(() async {
       final response = await _dio.get(
-        '/stores/$storeId/products/$productId/images/',
+        '/stores/$storeId/products/$productId/variants/$variantId/images/',
         cancelToken: cancelToken,
       );
 
       final list = _dataList(response.data);
-
-      final images = list
-          .map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
+      return list
+          .map(
+            (item) =>
+                ProductVariantImage.fromJson(item as Map<String, dynamic>),
+          )
           .toList();
-
-      images.sort((a, b) => a.order.compareTo(b.order));
-
-      return images;
     });
   }
 
-  Future<List<ProductImage>> uploadProductImages({
+  Future<ProductVariantImage> uploadVariantImage({
     required int storeId,
     required int productId,
-    required List<File> imageFiles,
+    required int variantId,
+    required File imageFile,
+    int? order,
     CancelToken? cancelToken,
   }) async {
     return execute(() async {
-      final formData = FormData();
-
-      for (final file in imageFiles) {
-        final fileName = file.path.split('/').last;
-        formData.files.add(
-          MapEntry(
-            'images',
-            await MultipartFile.fromFile(file.path, filename: fileName),
-          ),
-        );
-      }
+      final fileName = imageFile.path.split('/').last;
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+        ),
+        if (order != null) 'order': order,
+      });
 
       final response = await _dio.post(
-        '/stores/$storeId/products/$productId/images/',
+        '/stores/$storeId/products/$productId/variants/$variantId/images/',
         data: formData,
         cancelToken: cancelToken,
       );
 
-      final list = _dataList(response.data);
-
-      return list
-          .map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
-          .toList();
+      final data = _dataMap(response.data);
+      if (data != null) return ProductVariantImage.fromJson(data);
+      return ProductVariantImage.fromJson(
+        response.data as Map<String, dynamic>,
+      );
     });
   }
 
-  Future<bool> deleteProductImage({
+  Future<Product> deleteVariantImage({
     required int storeId,
     required int productId,
+    required int variantId,
     required int imageId,
     CancelToken? cancelToken,
   }) async {
     return execute(() async {
       final response = await _dio.delete(
-        '/stores/$storeId/products/$productId/images/$imageId/',
+        '/stores/$storeId/products/$productId/variants/$variantId/images/$imageId/',
         cancelToken: cancelToken,
       );
-
-      if (response.data is Map) {
-        final body = Map<String, dynamic>.from(response.data as Map);
-        return body['success'] as bool? ?? true;
-      }
-      return true;
+      return Product.fromJson(_dataMap(response.data)!);
     });
   }
 }

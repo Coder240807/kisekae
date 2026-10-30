@@ -98,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     "KISEKAE",
@@ -107,16 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.w400,
                       color: Color(0xFF7D2938),
                       fontFamily: 'serif',
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(
-                      Icons.notifications_none_rounded,
-                      color: Color(0xFF8B2E3E),
-                      size: 22,
                     ),
                   ),
                 ],

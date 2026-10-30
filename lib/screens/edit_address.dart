@@ -303,6 +303,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                             value: state,
                             child: Text(
                               state,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.black87,
                                 fontSize: 14,

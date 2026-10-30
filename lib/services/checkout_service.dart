@@ -32,15 +32,39 @@ class CheckoutService extends BaseRepository {
       };
 
       final response = await _dio.post(
-        '/cart/checkout/',
+        '/orders/checkout/',
         data: payload,
         cancelToken: cancelToken,
       );
 
+      print(response);
       final body = Map<String, dynamic>.from(response.data as Map);
       final checkoutData = Map<String, dynamic>.from(body['data'] as Map);
 
       return CheckoutResponse.fromJson(checkoutData);
+    });
+  }
+
+  /// Verifies the Razorpay payment signature with the backend.
+  /// On success, the order transitions from PENDING → CONFIRMED.
+  Future<void> verifyPayment({
+    required int orderId,
+    required String razorpayPaymentId,
+    required String razorpayOrderId,
+    required String razorpaySignature,
+    CancelToken? cancelToken,
+  }) async {
+    return execute(() async {
+      await _dio.post(
+        '/orders/verify-payment/',
+        data: {
+          'order_id': orderId,
+          'razorpay_payment_id': razorpayPaymentId,
+          'razorpay_order_id': razorpayOrderId,
+          'razorpay_signature': razorpaySignature,
+        },
+        cancelToken: cancelToken,
+      );
     });
   }
 }

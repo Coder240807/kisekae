@@ -3,22 +3,6 @@ import 'package:kisekae/models/auth_response.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/storage.dart';
 
-class AuthResponse {
-  final bool success;
-  final String message;
-  final Map<String, dynamic>? data;
-  final String? errorCode;
-  final Map<String, dynamic>? errorDetails;
-
-  AuthResponse(
-    this.success,
-    this.message, [
-    this.data,
-    this.errorCode,
-    this.errorDetails,
-  ]);
-}
-
 class EmailAuth {
   final Dio dio = DioClient.dio;
   final TokenStorage _tokenStorage = TokenStorage();
