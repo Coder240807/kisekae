@@ -186,6 +186,7 @@ class _HistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(item);
     final url = item.resultImageUrl;
     final hasImage = item.isReady && url != null && url.isNotEmpty;
     final isCombo = (item.comboName ?? '').isNotEmpty;

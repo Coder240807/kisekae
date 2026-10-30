@@ -6,6 +6,7 @@ import 'package:kisekae/screens/store_order.dart';
 import 'package:kisekae/screens/team_access.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/email_auth.dart';
+import 'package:kisekae/services/post_auth.dart';
 
 class ProfileScreen extends StatefulWidget {
   final int storeId;
@@ -61,6 +62,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => InvitesScreen(storeId: widget.storeId)),
     );
+  }
+
+  void _openBuyerSide() {
+    PostAuth.openSide(context, seller: false);
   }
 
   Future<void> _confirmLogout() async {
@@ -279,6 +284,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.person,
                 label: 'Business information',
                 onTap: () => _comingSoon('Business information'),
+              ),
+              _settingTile(
+                cs,
+                icon: Icons.shopping_bag_outlined,
+                label: 'Buyer mode',
+                onTap: () => _openBuyerSide(),
               ),
               _settingTile(
                 cs,

@@ -1,13 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:kisekae/models/advertising.dart';
 import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/dashboard_model.dart';
 import 'package:kisekae/screens/add_product.dart';
+import 'package:kisekae/screens/advertising_screen.dart';
 import 'package:kisekae/screens/analytics_screen.dart';
 import 'package:kisekae/screens/multiple_stores.dart';
 import 'package:kisekae/screens/store_order.dart';
 import 'package:kisekae/services/analytics.dart';
+import 'package:kisekae/services/seller_product.dart';
 import 'package:kisekae/widgets/seller_bottom_bar.dart';
 
 class SellerDashboardScreen extends StatefulWidget {
@@ -21,6 +24,7 @@ class SellerDashboardScreen extends StatefulWidget {
 
 class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   int _currentIndex = 0;
+  final HandleProduct _productService = HandleProduct();
 
   static const Color _widgetBgColor = Color(0xFFFFF9F2);
 
@@ -83,6 +87,30 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     return pick(metrics);
   }
 
+  void _openAdvertisement() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdvertisementScreen(
+          storeId: widget.storeId,
+          loadStoreProducts: () async {
+            final products = await _productService.getStoreProducts(
+              storeId: widget.storeId,
+            );
+            return products
+                .map(
+                  (p) => PromotableProduct(
+                    id: p.id,
+                    name: p.name,
+                    price: double.tryParse(p.price) ?? 0,
+                  ),
+                )
+                .toList();
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -126,16 +154,6 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             ),
           ),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.notifications_none_rounded,
-              color: colorScheme.primary,
-              size: 28,
-            ),
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -163,6 +181,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               SizedBox(height: size.height * (20 / 840)),
               _buildStatsGrid(size, colorScheme),
               SizedBox(height: size.height * (16 / 840)),
+              _advertisementRedirectCard(size, colorScheme, _openAdvertisement),
             ],
           ),
         ),
@@ -477,6 +496,56 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _advertisementRedirectCard(
+    Size size,
+    ColorScheme colorScheme,
+    VoidCallback onTap,
+  ) {
+    final cardWidth = size.width * (320 / 360);
+    final cardHeight = size.height * (65 / 840);
+
+    return InkWell(
+      onTap: onTap,
+      child: Center(
+        child: Container(
+          width: cardWidth,
+          height: cardHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: _widgetBgColor,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.cell_tower, size: 22, color: colorScheme.primary),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Advertisement",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      "Create campaigns to reach more buyer",
+                      style: TextStyle(fontSize: 12, color: Color(0xFF575655)),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward, size: 22, color: colorScheme.primary),
+            ],
+          ),
+        ),
       ),
     );
   }

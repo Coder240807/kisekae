@@ -80,7 +80,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           final theme = Theme.of(context);
           final scheme = theme.colorScheme;
           final textTheme = theme.textTheme;
-          final isDark = theme.brightness == Brightness.dark;
 
           return Scaffold(
             appBar: AppBar(
@@ -109,12 +108,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     )
                   : null,
               actions: [
-                if (_currentPage == 0)
-                  _ThemeToggle(
-                    isDark: isDark,
-                    onChanged: widget.onThemeChanged,
-                  ),
-                if (_currentPage == 0) const SizedBox(width: 16),
                 TextButton(
                   onPressed: _skip,
                   style: TextButton.styleFrom(
@@ -410,79 +403,6 @@ class _ImageTile extends StatelessWidget {
                 ],
               ),
             ),
-      ),
-    );
-  }
-}
-
-class _ThemeToggle extends StatelessWidget {
-  const _ThemeToggle({required this.isDark, this.onChanged});
-
-  final bool isDark;
-  final ValueChanged<bool>? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    const double width = 64;
-    const double height = 30;
-    const double thumb = 24;
-
-    return GestureDetector(
-      onTap: () => onChanged?.call(!isDark),
-      child: Container(
-        width: width,
-        height: height,
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(height),
-          border: Border.all(color: scheme.onSurface, width: 1.2),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SizedBox(
-                  width: thumb,
-                  child: Icon(
-                    Icons.wb_sunny_rounded,
-                    size: 14,
-                    color: scheme.onSurface,
-                  ),
-                ),
-                SizedBox(
-                  width: thumb,
-                  child: Icon(
-                    Icons.nightlight_round,
-                    size: 14,
-                    color: scheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-            AnimatedAlign(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                width: thumb,
-                height: thumb,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: scheme.primary,
-                ),
-                child: Icon(
-                  isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-                  size: 14,
-                  color: scheme.onPrimary,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

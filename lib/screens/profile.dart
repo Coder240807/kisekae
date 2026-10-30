@@ -127,16 +127,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           "Profile",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(
-              Icons.notifications_outlined,
-              size: 28,
-              color: Color(0xFF8B2E3E),
-            ),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

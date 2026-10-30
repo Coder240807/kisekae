@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/cart.dart';
 import 'package:kisekae/models/checkout.dart';
@@ -8,6 +9,7 @@ import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/screens/trackorderscreen.dart';
 import 'package:kisekae/services/buyer_address.dart';
 import 'package:kisekae/services/checkout_service.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class _PaymentMethod {
   final String label;
@@ -41,6 +43,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final PageController _controller = PageController();
   final AddressService _addressService = AddressService();
   final CheckoutService _checkoutService = CheckoutService();
+  late final Razorpay _razorpay;
 
   CancelToken? _cancelToken;
   CustomerAddress? _selectedAddress;
@@ -51,17 +54,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isLoadingAddress = true;
   bool _isPlacingOrder = false;
 
+  // ── Razorpay key from .env ──────────────────────────────────────────────────
+  String get _razorpayKey =>
+      dotenv.env['RAZORPAY_KEY_ID'] ?? '';
+
   @override
   void initState() {
     super.initState();
     _cancelToken = CancelToken();
     _loadAddress();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _onPaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _onPaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _onExternalWallet);
   }
 
   @override
   void dispose() {
     _cancelToken?.cancel("CheckoutScreen disposed");
     _controller.dispose();
+    _razorpay.clear();
     super.dispose();
   }
 
@@ -172,6 +184,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  // ── Step 1: Place the order (creates Razorpay order on backend) ────────────
   Future<void> _placeOrder() async {
     final address = _selectedAddress;
     if (address == null || _isPlacingOrder) {
@@ -190,12 +203,100 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _result = result;
         _isPlacingOrder = false;
       });
-      _nextPage();
+
+      if (result.requiresRazorpay) {
+        // Open Razorpay checkout for the first order that has a razorpay_order_id.
+        // Multi-store carts may produce multiple orders; open one at a time.
+        final orderWithPayment =
+            result.orders.firstWhere((o) => o.razorpayOrderId.isNotEmpty);
+        _openRazorpay(orderWithPayment);
+      } else {
+        // Fully covered by wallet or COD — skip to confirm page.
+        _nextPage();
+      }
     } catch (e) {
       if (!mounted || (e is DioException && CancelToken.isCancel(e))) return;
       setState(() => _isPlacingOrder = false);
       _showSnack(e is ApiException ? e.message : 'Could not place your order');
     }
+  }
+
+  // ── Step 2: Open the Razorpay checkout sheet ───────────────────────────────
+  void _openRazorpay(CheckoutOrder order) {
+    final amountInPaise = (double.tryParse(order.totalAmount) ?? 0) * 100;
+
+    final options = <String, dynamic>{
+      'key': _razorpayKey,
+      'amount': amountInPaise.toInt(),
+      'currency': order.currency.isNotEmpty ? order.currency : 'INR',
+      'order_id': order.razorpayOrderId,
+      'name': 'KiseKae',
+      'description': 'Order #${order.orderNumber}',
+      'prefill': {
+        'contact': '',
+        'email': '',
+      },
+      'theme': {'color': '#8B2E3E'},
+    };
+
+    try {
+      _razorpay.open(options);
+    } catch (e) {
+      _showSnack('Could not open payment gateway. Please try again.');
+      setState(() => _isPlacingOrder = false);
+    }
+  }
+
+  // ── Step 3a: Payment success — verify with backend ─────────────────────────
+  void _onPaymentSuccess(PaymentSuccessResponse response) async {
+    final result = _result;
+    if (result == null) return;
+
+    // Find the matching order by razorpay_order_id
+    final order = result.orders.firstWhere(
+      (o) => o.razorpayOrderId == response.orderId,
+      orElse: () => result.orders.first,
+    );
+
+    setState(() => _isPlacingOrder = true);
+    try {
+      await _checkoutService.verifyPayment(
+        orderId: order.orderId,
+        razorpayPaymentId: response.paymentId ?? '',
+        razorpayOrderId: response.orderId ?? '',
+        razorpaySignature: response.signature ?? '',
+        cancelToken: _cancelToken,
+      );
+      if (!mounted) return;
+      setState(() => _isPlacingOrder = false);
+      _nextPage();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isPlacingOrder = false);
+      _showSnack(
+        e is ApiException
+            ? e.message
+            : 'Payment received but verification failed. Contact support.',
+      );
+      // Still advance to confirm — user has paid
+      _nextPage();
+    }
+  }
+
+  // ── Step 3b: Payment failed / cancelled ───────────────────────────────────
+  void _onPaymentError(PaymentFailureResponse response) {
+    if (!mounted) return;
+    setState(() => _isPlacingOrder = false);
+    _showSnack(
+      response.message?.isNotEmpty == true
+          ? 'Payment failed: ${response.message}'
+          : 'Payment was cancelled or failed. Please try again.',
+    );
+  }
+
+  // ── External wallet selected (informational) ───────────────────────────────
+  void _onExternalWallet(ExternalWalletResponse response) {
+    _showSnack('External wallet selected: ${response.walletName}');
   }
 
   void _goHome() {
@@ -487,6 +588,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           const SizedBox(height: 4),
           _priceSummary(),
+          const SizedBox(height: 8),
+          // Razorpay branding note
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+              SizedBox(width: 4),
+              Text(
+                'Secured by Razorpay',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
         ],
       ),
     );

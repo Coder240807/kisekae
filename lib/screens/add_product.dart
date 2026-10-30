@@ -7,10 +7,36 @@ import "package:kisekae/models/api_exception.dart";
 import "package:kisekae/models/seller_product.dart";
 import "package:kisekae/services/seller_product.dart";
 
+class _VariantData {
+  final TextEditingController colorNameCtrl = TextEditingController();
+  final TextEditingController colorHexCtrl = TextEditingController(text: '#');
+  final TextEditingController skuCtrl = TextEditingController();
+  final Set<String> selectedSizes = {};
+  final Map<String, TextEditingController> stockCtrls = {
+    for (final s in AddProductScreen._sizes) s: TextEditingController(),
+  };
+
+  void dispose() {
+    colorNameCtrl.dispose();
+    colorHexCtrl.dispose();
+    skuCtrl.dispose();
+    for (final c in stockCtrls.values) {
+      c.dispose();
+    }
+  }
+
+  List<String> get chosenSizes => [
+    for (final s in AddProductScreen._sizes)
+      if (selectedSizes.contains(s)) s,
+  ];
+}
+
 class AddProductScreen extends StatefulWidget {
   final int storeId;
 
   const AddProductScreen({super.key, required this.storeId});
+
+  static const List<String> _sizes = ['XS', 'S', 'M', 'L', 'XL'];
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -29,16 +55,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
     ('One-Piece', 'ONE_PIECE'),
     ('Footwear', 'FOOTWEAR'),
   ];
-  static const _sizes = ['XS', 'S', 'M', 'L', 'XL'];
 
   static final _nameRegex = RegExp(
     r"^[\p{L}\p{N}][\p{L}\p{N} &'.,\-()/]*$",
     unicode: true,
   );
   static final _skuRegex = RegExp(r'^[A-Za-z0-9\-_]{3,30}$');
-  static final _colourRegex = RegExp(r'^\p{L}[\p{L} ]{0,29}$', unicode: true);
   static final _priceRegex = RegExp(r'^\d{1,8}(\.\d{1,2})?$');
   static final _stockRegex = RegExp(r'^\d{1,6}$');
+  static final _hexRegex = RegExp(r'^#[0-9A-Fa-f]{6}$');
 
   final HandleProduct _productService = HandleProduct();
   final PageController _controller = PageController();
@@ -46,9 +71,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
   bool _isSubmitting = false;
 
   int? _createdProductId;
+  int? _createdFirstVariantId;
   String? _createdStatus;
-  bool _primaryUploaded = false;
-  bool _galleryUploaded = false;
+  bool _imagesUploaded = false;
 
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
@@ -58,13 +83,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final List<File> _images = [];
   final _picker = ImagePicker();
 
-  final _colourCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
   final _mrpCtrl = TextEditingController();
-  final Set<String> _selectedSizes = {};
-  final Map<String, TextEditingController> _stockCtrls = {
-    for (final s in _sizes) s: TextEditingController(),
-  };
+
+  final List<_VariantData> _variants = [_VariantData()];
 
   @override
   void initState() {
@@ -78,11 +100,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _nameCtrl.dispose();
     _descCtrl.dispose();
     _skuCtrl.dispose();
-    _colourCtrl.dispose();
     _priceCtrl.dispose();
     _mrpCtrl.dispose();
-    for (final c in _stockCtrls.values) {
-      c.dispose();
+    for (final v in _variants) {
+      v.dispose();
     }
     super.dispose();
   }
@@ -90,16 +111,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
   int get _wordCount => _descCtrl.text.trim().isEmpty
       ? 0
       : _descCtrl.text.trim().split(RegExp(r'\s+')).length;
-
-  List<String> get _chosenSizes => [
-    for (final s in _sizes)
-      if (_selectedSizes.contains(s)) s,
-  ];
-
-  int get _totalStock => _chosenSizes.fold(
-    0,
-    (sum, s) => sum + (int.tryParse(_stockCtrls[s]!.text.trim()) ?? 0),
-  );
 
   void _msg(String text) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -129,16 +140,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   String? _validateVariants() {
-    final colour = _colourCtrl.text.trim();
-    if (colour.isNotEmpty && !_colourRegex.hasMatch(colour)) {
-      return 'Colour can only contain letters (max 30)';
-    }
-    if (_selectedSizes.isEmpty) return 'Select at least one size';
-    for (final s in _chosenSizes) {
-      final stock = _stockCtrls[s]!.text.trim();
-      if (!_stockRegex.hasMatch(stock))
-        return 'Enter stock quantity for size $s';
-    }
     final price = _priceCtrl.text.trim();
     if (!_priceRegex.hasMatch(price) || double.parse(price) <= 0) {
       return 'Enter a valid price';
@@ -148,6 +149,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (!_priceRegex.hasMatch(mrp)) return 'Enter a valid MRP';
       if (double.parse(mrp) < double.parse(price)) {
         return 'MRP cannot be less than the price';
+      }
+    }
+    for (var i = 0; i < _variants.length; i++) {
+      final v = _variants[i];
+      final colorName = v.colorNameCtrl.text.trim();
+      if (colorName.isEmpty) return 'Enter colour name for variant ${i + 1}';
+      final colorHex = v.colorHexCtrl.text.trim();
+      if (!_hexRegex.hasMatch(colorHex)) {
+        return 'Enter a valid hex colour (#RRGGBB) for variant ${i + 1}';
+      }
+      if (v.selectedSizes.isEmpty) {
+        return 'Select at least one size for variant ${i + 1}';
+      }
+      for (final s in v.chosenSizes) {
+        final stock = v.stockCtrls[s]!.text.trim();
+        if (!_stockRegex.hasMatch(stock)) {
+          return 'Enter stock quantity for size $s in variant ${i + 1}';
+        }
       }
     }
     return null;
@@ -222,15 +241,34 @@ class _AddProductScreenState extends State<AddProductScreen> {
     setState(() => _images.removeAt(index));
   }
 
+  List<VariantInput> _buildVariantInputs() {
+    return [
+      for (final v in _variants)
+        VariantInput(
+          colorName: v.colorNameCtrl.text.trim(),
+          colorHex: v.colorHexCtrl.text.trim(),
+          sku: v.skuCtrl.text.trim().isEmpty ? null : v.skuCtrl.text.trim(),
+          isActive: true,
+          sizes: [
+            for (final s in v.chosenSizes)
+              ProductSizeInput(
+                size: s,
+                stock: int.parse(v.stockCtrls[s]!.text.trim()),
+              ),
+          ],
+        ),
+    ];
+  }
+
   Future<void> _submit(String status) async {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
 
     try {
       var productId = _createdProductId;
+      var firstVariantId = _createdFirstVariantId;
 
       if (productId == null) {
-        final colour = _colourCtrl.text.trim();
         final description = _descCtrl.text.trim();
         final sku = _skuCtrl.text.trim();
         final mrp = _mrpCtrl.text.trim();
@@ -238,20 +276,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
         final request = CreateProductRequest(
           name: _nameCtrl.text.trim(),
           category: _category!,
-          color: colour.isEmpty ? null : colour,
           description: description.isEmpty ? null : description,
           price: _priceCtrl.text.trim(),
           compareAtPrice: mrp.isEmpty ? null : mrp,
           sku: sku.isEmpty ? null : sku,
-          stock: _totalStock,
-          sizes: [
-            for (final s in _chosenSizes)
-              ProductSizeInput(
-                size: s,
-                stock: int.parse(_stockCtrls[s]!.text.trim()),
-              ),
-          ],
           status: status,
+          variants: _buildVariantInputs(),
         );
 
         final created = await _productService.createProduct(
@@ -261,25 +291,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
         productId = created.id;
         _createdProductId = productId;
         _createdStatus = status;
+        if (created.variants.isNotEmpty) {
+          firstVariantId = created.variants.first.id;
+          _createdFirstVariantId = firstVariantId;
+        }
       }
 
-      if (!_primaryUploaded) {
-        await _productService.uploadProductPrimaryImage(
-          storeId: widget.storeId,
-          productId: productId,
-          imageFile: _images.first,
-        );
-        _primaryUploaded = true;
-      }
-
-      final gallery = _images.skip(1).toList();
-      if (gallery.isNotEmpty && !_galleryUploaded) {
-        await _productService.uploadProductImages(
-          storeId: widget.storeId,
-          productId: productId,
-          imageFiles: gallery,
-        );
-        _galleryUploaded = true;
+      if (!_imagesUploaded && _images.isNotEmpty && firstVariantId != null) {
+        for (var i = 0; i < _images.length; i++) {
+          await _productService.uploadVariantImage(
+            storeId: widget.storeId,
+            productId: productId,
+            variantId: firstVariantId,
+            imageFile: _images[i],
+            order: i,
+          );
+        }
+        _imagesUploaded = true;
       }
 
       if (!mounted) return;
@@ -667,7 +695,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           if (_images.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              'The first image is the main product image',
+              'Images will be uploaded to the first variant',
               style: TextStyle(fontSize: 13, color: cs.onSurface),
             ),
           ],
@@ -755,84 +783,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _label('Colour (optional)'),
-          TextField(
-            controller: _colourCtrl,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(
-                RegExp(r'[\p{L} ]', unicode: true),
-              ),
-              LengthLimitingTextInputFormatter(30),
-            ],
-            decoration: _dec('e.g. Maroon'),
-          ),
-          const SizedBox(height: 16),
-          _label('Size'),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (final s in _sizes)
-                GestureDetector(
-                  onTap: () => setState(() {
-                    if (!_selectedSizes.remove(s)) _selectedSizes.add(s);
-                  }),
-                  child: Container(
-                    width: 56,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: _selectedSizes.contains(s)
-                          ? cs.surfaceContainerHighest
-                          : cs.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: cs.primary,
-                        width: _selectedSizes.contains(s) ? 2 : 1,
-                      ),
-                    ),
-                    child: Text(
-                      s,
-                      style: TextStyle(fontSize: 16, color: cs.onSurface),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          if (_selectedSizes.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _label('Stock Quantity'),
-            for (final s in _chosenSizes)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 44,
-                      child: Text(
-                        s,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _stockCtrls[s],
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(6),
-                        ],
-                        decoration: _dec('Enter stock for size $s'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-          const SizedBox(height: 4),
           _label('Price'),
           TextField(
             controller: _priceCtrl,
@@ -854,7 +804,166 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ],
             decoration: _dec('Enter MRP', prefixText: '₹ '),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Variants',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => setState(() => _variants.add(_VariantData())),
+                icon: Icon(Icons.add, color: cs.primary),
+                label: Text(
+                  'Add Variant',
+                  style: TextStyle(color: cs.primary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (var i = 0; i < _variants.length; i++) ...[
+            _variantCard(i),
+            const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _variantCard(int index) {
+    final cs = Theme.of(context).colorScheme;
+    final v = _variants[index];
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.primary.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Variant ${index + 1}',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: cs.onSurface,
+                ),
+              ),
+              const Spacer(),
+              if (_variants.length > 1)
+                IconButton(
+                  icon: Icon(Icons.remove_circle_outline, color: cs.error),
+                  onPressed: () => setState(() {
+                    _variants[index].dispose();
+                    _variants.removeAt(index);
+                  }),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _label('Colour Name'),
+          TextField(
+            controller: v.colorNameCtrl,
+            inputFormatters: [LengthLimitingTextInputFormatter(30)],
+            decoration: _dec('e.g. Washed Charcoal'),
+          ),
+          const SizedBox(height: 12),
+          _label('Colour Hex'),
+          TextField(
+            controller: v.colorHexCtrl,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[#0-9A-Fa-f]')),
+              LengthLimitingTextInputFormatter(7),
+            ],
+            decoration: _dec('#RRGGBB'),
+          ),
+          const SizedBox(height: 12),
+          _label('Variant SKU (optional)'),
+          TextField(
+            controller: v.skuCtrl,
+            textCapitalization: TextCapitalization.characters,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9\-_]')),
+              LengthLimitingTextInputFormatter(30),
+            ],
+            decoration: _dec('e.g. TEE-CHAR-01'),
+          ),
+          const SizedBox(height: 12),
+          _label('Sizes'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (final s in AddProductScreen._sizes)
+                GestureDetector(
+                  onTap: () => setState(() {
+                    if (!v.selectedSizes.remove(s)) v.selectedSizes.add(s);
+                  }),
+                  child: Container(
+                    width: 52,
+                    height: 38,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: v.selectedSizes.contains(s)
+                          ? cs.primary.withOpacity(0.15)
+                          : cs.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: cs.primary,
+                        width: v.selectedSizes.contains(s) ? 2 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      s,
+                      style: TextStyle(fontSize: 15, color: cs.onSurface),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (v.selectedSizes.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _label('Stock Quantity'),
+            for (final s in v.chosenSizes)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 44,
+                      child: Text(
+                        s,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: v.stockCtrls[s],
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(6),
+                        ],
+                        decoration: _dec('Stock for $s'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -945,8 +1054,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       ),
                   ],
                 ),
-                heading('Variants'),
-                row('Colour', _colourCtrl.text.trim()),
+                heading('Pricing'),
                 row(
                   'Price',
                   _priceCtrl.text.trim().isEmpty
@@ -959,10 +1067,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       ? ''
                       : '₹${_mrpCtrl.text.trim()}',
                 ),
-                heading('Stock'),
-                for (final s in _chosenSizes)
-                  row('Size $s', _stockCtrls[s]!.text.trim()),
-                row('Total', _totalStock.toString()),
+                heading('Variants (${_variants.length})'),
+                for (var i = 0; i < _variants.length; i++) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'Variant ${i + 1}: ${_variants[i].colorNameCtrl.text.trim()} (${_variants[i].colorHexCtrl.text.trim()})',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ),
+                  for (final s in _variants[i].chosenSizes)
+                    row('  Size $s', _variants[i].stockCtrls[s]!.text.trim()),
+                ],
               ],
             ),
           ),

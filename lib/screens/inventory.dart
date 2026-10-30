@@ -35,14 +35,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
     if (showLoader) setState(() => _isLoading = true);
 
     try {
-      final response = await _productService.getStoreProducts(
+      final products = await _productService.getStoreProducts(
         storeId: widget.storeId,
         status: 'ACTIVE',
       );
 
       if (!mounted) return;
       setState(() {
-        _allProducts = response.results;
+        _allProducts = products;
         _isLoading = false;
       });
     } catch (e) {
@@ -60,19 +60,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
     switch (_selectedFilter) {
       case 'Low Stock':
         return _allProducts
-            .where((p) => p.stock > 0 && p.stock < _lowStockLimit)
+            .where((p) => p.totalStock > 0 && p.totalStock < _lowStockLimit)
             .toList();
       case 'Out of Stock':
-        return _allProducts.where((p) => p.stock <= 0).toList();
+        return _allProducts.where((p) => p.totalStock <= 0).toList();
       default:
-        return _allProducts.where((p) => p.stock > 0).toList();
+        return _allProducts.where((p) => p.totalStock > 0).toList();
     }
   }
 
   Map<String, dynamic> _getStatusDisplay(Product product) {
-    if (product.stock <= 0) {
+    if (product.totalStock <= 0) {
       return {'text': 'Out of stock', 'color': const Color(0xFFE53935)};
-    } else if (product.stock < _lowStockLimit) {
+    } else if (product.totalStock < _lowStockLimit) {
       return {'text': 'Low stock', 'color': const Color(0xFFFF8A65)};
     } else {
       return {'text': 'In stock', 'color': const Color(0xFF4CAF50)};
@@ -89,7 +89,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ),
       ),
     ).then((_) {
-      // Reload quietly when coming back, so edits made there show up here.
       if (mounted) _fetchProducts(showLoader: false);
     });
   }
@@ -154,7 +153,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Stock - ${product.stock}",
+                    "Stock - ${product.totalStock}",
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.black.withOpacity(0.7),

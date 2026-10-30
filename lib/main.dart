@@ -8,7 +8,6 @@ import 'package:kisekae/screens/home_screen.dart';
 import 'package:kisekae/screens/myorder_detail.dart';
 import 'package:kisekae/screens/onboarding_screen.dart';
 import 'package:kisekae/screens/seller_start.dart';
-import 'package:kisekae/screens/sellergate_screen.dart';
 import 'package:kisekae/screens/tryon_history.dart';
 import 'package:kisekae/core/notifications/background_handler.dart';
 import 'package:kisekae/core/notifications/notification_service.dart';
