@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/models/api_exception.dart';
+import 'package:kisekae/models/seller_product.dart';
+
 import 'package:kisekae/models/store_create.dart';
 import 'package:kisekae/screens/editstore_screen.dart';
 import 'package:kisekae/screens/seller_gate_screen.dart';
+import 'package:kisekae/services/format.dart';
+import 'package:kisekae/services/seller_product.dart';
 import 'package:kisekae/services/store.dart';
 
 class MyStoreScreen extends StatefulWidget {
@@ -15,12 +19,22 @@ class MyStoreScreen extends StatefulWidget {
 }
 
 class _MyStoreScreenState extends State<MyStoreScreen> {
+  static const _pageSize = 20;
+
   final _storeOperations = StoreOperations();
+  final _productOperations = HandleProduct();
 
   Store? _store;
   bool _loading = true;
   bool _archiving = false;
   String? _error;
+
+  final List<Product> _products = [];
+  int _productPage = 1;
+  bool _productsLoading = true;
+  bool _loadingMoreProducts = false;
+  bool _hasMoreProducts = false;
+  String? _productsError;
 
   bool get _isOwner => _store?.myRole.toUpperCase() == 'OWNER';
 
@@ -28,6 +42,7 @@ class _MyStoreScreenState extends State<MyStoreScreen> {
   void initState() {
     super.initState();
     _load();
+    _loadProducts();
   }
 
   void _showMessage(String text, {bool error = false}) {
@@ -63,6 +78,65 @@ class _MyStoreScreenState extends State<MyStoreScreen> {
       setState(() => _error = 'Failed to load your store');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadProducts({bool spinner = true}) async {
+    if (spinner) {
+      setState(() {
+        _productsLoading = true;
+        _productsError = null;
+      });
+    }
+    try {
+      final items = await _productOperations.getStoreProducts(
+        storeId: widget.storeId,
+        page: 1,
+        pageSize: _pageSize,
+      );
+      if (!mounted) return;
+      setState(() {
+        _products
+          ..clear()
+          ..addAll(items);
+        _productPage = 1;
+        _hasMoreProducts = items.length >= _pageSize;
+        _productsError = null;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _productsError = e.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _productsError = 'Could not load products');
+    } finally {
+      if (mounted) setState(() => _productsLoading = false);
+    }
+  }
+
+  Future<void> _loadMoreProducts() async {
+    if (_loadingMoreProducts || !_hasMoreProducts) return;
+    setState(() => _loadingMoreProducts = true);
+    try {
+      final next = _productPage + 1;
+      final items = await _productOperations.getStoreProducts(
+        storeId: widget.storeId,
+        page: next,
+        pageSize: _pageSize,
+      );
+      if (!mounted) return;
+      setState(() {
+        final seen = _products.map((p) => p.id).toSet();
+        _products.addAll(items.where((p) => seen.add(p.id)));
+        _productPage = next;
+        _hasMoreProducts = items.length >= _pageSize;
+      });
+    } on ApiException catch (e) {
+      if (mounted) _showMessage(e.message, error: true);
+    } catch (_) {
+      if (mounted) _showMessage('Could not load more products', error: true);
+    } finally {
+      if (mounted) setState(() => _loadingMoreProducts = false);
     }
   }
 
@@ -124,6 +198,120 @@ class _MyStoreScreenState extends State<MyStoreScreen> {
     }
   }
 
+  Widget _productsSection(ColorScheme cs) {
+    final title = Text(
+      'Products',
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: cs.onSurface,
+      ),
+    );
+
+    Widget content;
+    if (_productsLoading) {
+      content = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator(color: cs.primary)),
+      );
+    } else if (_productsError != null && _products.isEmpty) {
+      content = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          children: [
+            Text(
+              _productsError!,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: cs.onSurface),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _loadProducts,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: cs.primary,
+                side: BorderSide(color: cs.primary),
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    } else if (_products.isEmpty) {
+      content = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text(
+            'No products added yet.',
+            style: TextStyle(
+              fontSize: 14,
+              color: cs.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+        ),
+      );
+    } else {
+      content = Column(
+        children: [
+          LayoutBuilder(
+            builder: (context, c) {
+              const gap = 12.0;
+              final itemWidth = (c.maxWidth - gap) / 2;
+              final imageHeight = itemWidth * 1.05;
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _products.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: gap,
+                  mainAxisSpacing: 14,
+                  mainAxisExtent: imageHeight + 72,
+                ),
+                itemBuilder: (_, i) => _StoreProductCard(
+                  product: _products[i],
+                  imageHeight: imageHeight,
+                ),
+              );
+            },
+          ),
+          if (_hasMoreProducts)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton(
+                  onPressed: _loadingMoreProducts ? null : _loadMoreProducts,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: cs.primary,
+                    side: BorderSide(color: cs.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _loadingMoreProducts
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: cs.primary,
+                          ),
+                        )
+                      : const Text('View more'),
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [title, const SizedBox(height: 12), content],
+    );
+  }
+
   Widget _body(ColorScheme cs) {
     if (_loading) {
       return Center(child: CircularProgressIndicator(color: cs.primary));
@@ -177,6 +365,8 @@ class _MyStoreScreenState extends State<MyStoreScreen> {
               : store.description,
           style: TextStyle(fontSize: 13, height: 1.35, color: cs.onSurface),
         ),
+        const SizedBox(height: 20),
+        _productsSection(cs),
         _ContactSection(store: store),
       ],
     );
@@ -253,7 +443,10 @@ class _MyStoreScreenState extends State<MyStoreScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           color: cs.primary,
-          onRefresh: () => _load(showSpinner: false),
+          onRefresh: () => Future.wait([
+            _load(showSpinner: false),
+            _loadProducts(spinner: false),
+          ]),
           child: _body(cs),
         ),
       ),
@@ -273,7 +466,7 @@ class _StoreHeader extends StatelessWidget {
       child: Icon(
         Icons.storefront_outlined,
         size: 40,
-        color: cs.primary.withOpacity(0.6),
+        color: cs.primary.withValues(alpha: 0.6),
       ),
     );
   }
@@ -468,6 +661,102 @@ class _ContactSection extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _StoreProductCard extends StatelessWidget {
+  final Product product;
+  final double imageHeight;
+
+  const _StoreProductCard({required this.product, required this.imageHeight});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final p = product;
+
+    final url = (p.thumbnail?.isNotEmpty ?? false)
+        ? p.thumbnail
+        : ((p.imageUrl?.isNotEmpty ?? false) ? p.imageUrl : null);
+    final rating = (p.reviewCount ?? 0) > 0 ? p.averageRating : null;
+
+    final placeholder = Container(
+      color: const Color(0xFFE4D6D0),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.checkroom,
+        size: 36,
+        color: cs.primary.withValues(alpha: 0.6),
+      ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            height: imageHeight,
+            width: double.infinity,
+            child: url == null
+                ? placeholder
+                : Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    errorBuilder: (_, __, ___) => placeholder,
+                  ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                p.storeName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface,
+                ),
+              ),
+            ),
+            if (rating != null) ...[
+              const Icon(Icons.star, size: 13, color: Colors.amber),
+              const SizedBox(width: 2),
+              Text(
+                rating.toStringAsFixed(1),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface,
+                ),
+              ),
+            ],
+          ],
+        ),
+        Text(
+          p.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12,
+            color: cs.onSurface.withValues(alpha: 0.65),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          inr(double.tryParse(p.price) ?? 0),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: cs.onSurface,
+          ),
+        ),
+      ],
     );
   }
 }
