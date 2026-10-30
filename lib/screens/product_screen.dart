@@ -324,7 +324,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
       if (!mounted) return;
 
-      // Mark as added to update button state
       setState(() {
         _addedComboIds.add(combo.id);
       });

@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:kisekae/models/api_exception.dart';
+import 'package:kisekae/models/autocomplete.dart';
 import 'package:kisekae/models/history.dart';
+import 'package:kisekae/screens/product_screen.dart';
+
 import 'package:kisekae/screens/products_list.dart';
 import 'package:kisekae/services/search_service.dart';
 
@@ -17,9 +22,15 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   CancelToken? _cancelToken;
+  CancelToken? _autocompleteCancelToken;
+  Timer? _debounceTimer;
+
   List<SearchHistoryItem> _history = [];
   bool _isLoadingHistory = true;
   bool _isClearing = false;
+
+  AutocompleteData? _autocompleteData;
+  bool _isLoadingAutocomplete = false;
 
   @override
   void initState() {
@@ -30,6 +41,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _cancelToken?.cancel("SearchScreen disposed");
+    _autocompleteCancelToken?.cancel("SearchScreen disposed");
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -58,6 +71,47 @@ class _SearchScreenState extends State<SearchScreen> {
     } catch (e) {
       if (!mounted || (e is DioException && CancelToken.isCancel(e))) return;
       setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  void _onSearchChanged(String rawQuery) {
+    _debounceTimer?.cancel();
+    final query = rawQuery.trim();
+
+    if (query.length < 2) {
+      _autocompleteCancelToken?.cancel("Query too short");
+      setState(() {
+        _autocompleteData = null;
+        _isLoadingAutocomplete = false;
+      });
+      return;
+    }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _fetchAutocomplete(query);
+    });
+  }
+
+  Future<void> _fetchAutocomplete(String query) async {
+    _autocompleteCancelToken?.cancel("New search typed");
+    _autocompleteCancelToken = CancelToken();
+
+    setState(() => _isLoadingAutocomplete = true);
+
+    try {
+      final response = await _productService.getAutocomplete(
+        query: query,
+        cancelToken: _autocompleteCancelToken,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _autocompleteData = response.data;
+        _isLoadingAutocomplete = false;
+      });
+    } catch (e) {
+      if (!mounted || (e is DioException && CancelToken.isCancel(e))) return;
+      setState(() => _isLoadingAutocomplete = false);
     }
   }
 
@@ -123,6 +177,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     const backgroundColor = Color(0xFFEFE8DF);
     const primaryColor = Color(0xFF8B2E3E);
+    final isSearching = _searchController.text.trim().length >= 2;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -187,7 +242,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: TextField(
                         controller: _searchController,
                         textInputAction: TextInputAction.search,
-                        onChanged: (_) => setState(() {}),
+                        onChanged: (val) {
+                          _onSearchChanged(val);
+                          setState(() {});
+                        },
                         onSubmitted: _search,
                         decoration: const InputDecoration(
                           hintText: "EXPLORE YOUR STYLE",
@@ -205,6 +263,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       GestureDetector(
                         onTap: () {
                           _searchController.clear();
+                          _onSearchChanged('');
                           setState(() {});
                         },
                         child: const Icon(
@@ -219,11 +278,170 @@ class _SearchScreenState extends State<SearchScreen> {
 
               const SizedBox(height: 20),
 
-              Expanded(child: _buildHistorySection(primaryColor)),
+              Expanded(
+                child: isSearching
+                    ? _buildAutocompleteSection(primaryColor)
+                    : _buildHistorySection(primaryColor),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAutocompleteSection(Color primaryColor) {
+    if (_isLoadingAutocomplete) {
+      return Center(child: CircularProgressIndicator(color: primaryColor));
+    }
+
+    final queries = _autocompleteData?.queries ?? [];
+    final instantProducts = _autocompleteData?.instantProducts ?? [];
+
+    if (queries.isEmpty && instantProducts.isEmpty) {
+      return const Align(
+        alignment: Alignment.topLeft,
+        child: Text(
+          "No suggestions found",
+          style: TextStyle(fontSize: 14, color: Colors.black54),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        // Suggested Query Phrases
+        if (queries.isNotEmpty) ...[
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: queries.length,
+            separatorBuilder: (_, __) =>
+                const Divider(height: 1, color: Color(0xFFD3C7B8)),
+            itemBuilder: (context, index) {
+              final queryText = queries[index];
+              return InkWell(
+                onTap: () => _search(queryText),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search, size: 18, color: Colors.black54),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          queryText,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.north_west,
+                        size: 14,
+                        color: Colors.black38,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        // Instant Products
+        if (instantProducts.isNotEmpty) ...[
+          const Text(
+            "Instant Results",
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 180,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: instantProducts.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final product = instantProducts[index];
+                final imageUrl = product.thumbnail ?? product.imageUrl;
+
+                return GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ProductDetailsScreen(productId: product.id),
+                    ),
+                  ),
+                  child: Container(
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFBF8F5),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFD3C7B8)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 110,
+                          width: double.infinity,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(15),
+                            ),
+                          ),
+                          child: (imageUrl == null || imageUrl.isEmpty)
+                              ? Container(color: const Color(0xFFE0D8CD))
+                              : Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  alignment: Alignment.topCenter,
+                                  errorBuilder: (_, __, ___) =>
+                                      Container(color: const Color(0xFFE0D8CD)),
+                                ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "${product.currency} ${product.price}",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ],
     );
   }
 

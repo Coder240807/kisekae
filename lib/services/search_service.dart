@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:kisekae/models/autocomplete.dart';
 import 'package:kisekae/models/history.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/helper.dart';
@@ -55,6 +56,23 @@ class SearchService extends BaseRepository {
       final body = Map<String, dynamic>.from(response.data as Map);
       return body['message'] as String? ??
           'Search history cleared successfully';
+    });
+  }
+
+  Future<AutocompleteResponse> getAutocomplete({
+    required String query,
+    int limit = 8,
+    CancelToken? cancelToken,
+  }) async {
+    return execute(() async {
+      final response = await _dio.get(
+        '/products/autocomplete/',
+        queryParameters: {'q': query.trim(), 'limit': limit},
+        cancelToken: cancelToken,
+      );
+
+      final mapData = Map<String, dynamic>.from(response.data ?? {});
+      return AutocompleteResponse.fromJson(mapData);
     });
   }
 }
