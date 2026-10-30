@@ -11,7 +11,7 @@ class CartService extends BaseRepository {
   Future<CartModel> getCart({String? cartToken}) async {
     return execute(() async {
       final response = await _dio.get(
-        '/cart/',
+        '/profile/cart/',
         options: Options(
           headers: {
             if (cartToken != null && cartToken.isNotEmpty)
@@ -30,7 +30,7 @@ class CartService extends BaseRepository {
   Future<CartModel> clearCart({String? cartToken}) async {
     return execute(() async {
       final response = await _dio.delete(
-        '/cart/clear/',
+        '/profile/cart/clear/',
         options: Options(
           headers: {
             if (cartToken != null && cartToken.isNotEmpty)
@@ -60,7 +60,7 @@ class CartService extends BaseRepository {
       };
 
       final response = await _dio.post(
-        '/cart/items/',
+        '/profile/cart/items/',
         data: payload,
         options: Options(
           headers: {
@@ -84,7 +84,7 @@ class CartService extends BaseRepository {
   }) async {
     return execute(() async {
       final response = await _dio.patch(
-        '/cart/items/$itemId/',
+        '/profile/cart/items/$itemId/',
         data: {'quantity': quantity},
         options: Options(
           headers: {
@@ -107,7 +107,7 @@ class CartService extends BaseRepository {
   }) async {
     return execute(() async {
       final response = await _dio.delete(
-        '/cart/items/$itemId/',
+        '/profile/cart/items/$itemId/',
         options: Options(
           headers: {
             if (cartToken != null && cartToken.isNotEmpty)
@@ -126,7 +126,7 @@ class CartService extends BaseRepository {
   Future<CartValidationResult> validateCart({String? cartToken}) async {
     return execute(() async {
       final response = await _dio.get(
-        '/cart/validate/',
+        '/profile/cart/validate/',
         options: Options(
           headers: {
             if (cartToken != null && cartToken.isNotEmpty)

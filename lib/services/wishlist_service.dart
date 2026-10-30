@@ -29,7 +29,7 @@ class WishlistService extends BaseRepository {
 
   Future<List<WishlistItem>> getWishlistItems() async {
     return execute(() async {
-      final response = await _dio.get('/accounts/wishlist/');
+      final response = await _dio.get('/profile/wishlist/');
 
       final list = _dataList(response.data);
 
@@ -49,7 +49,7 @@ class WishlistService extends BaseRepository {
     return execute(() async {
       final payload = {'product_id': productId, 'note': note};
 
-      final response = await _dio.post('/accounts/wishlist/', data: payload);
+      final response = await _dio.post('/profile/wishlist/', data: payload);
 
       return WishlistItem.fromJson(_dataMap(response.data)!);
     });
@@ -57,7 +57,7 @@ class WishlistService extends BaseRepository {
 
   Future<String> clearWishlist() async {
     return execute(() async {
-      final response = await _dio.delete('/accounts/wishlist/');
+      final response = await _dio.delete('/profile/wishlist/');
 
       if (response.data is Map) {
         final body = Map<String, dynamic>.from(response.data as Map);
@@ -69,7 +69,7 @@ class WishlistService extends BaseRepository {
 
   Future<String> removeWishlistItem(int productId) async {
     return execute(() async {
-      final response = await _dio.delete('/accounts/wishlist/$productId/');
+      final response = await _dio.delete('/profile/wishlist/$productId/');
 
       if (response.data is Map) {
         final body = Map<String, dynamic>.from(response.data as Map);
@@ -83,7 +83,7 @@ class WishlistService extends BaseRepository {
   Future<MoveToCartResult> moveToCart(int productId) async {
     return execute(() async {
       final response = await _dio.post(
-        '/accounts/wishlist/$productId/move-to-cart/',
+        '/profile/wishlist/$productId/move-to-cart/',
       );
 
       return MoveToCartResult.fromJson(_dataMap(response.data)!);
@@ -95,7 +95,7 @@ class WishlistService extends BaseRepository {
       final payload = {'product_ids': productIds};
 
       final response = await _dio.post(
-        '/accounts/wishlist/move-to-cart/',
+        '/profile/wishlist/move-to-cart/',
         data: payload,
       );
 

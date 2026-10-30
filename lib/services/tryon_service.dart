@@ -11,7 +11,7 @@ class TryOnService extends BaseRepository {
   Future<List<TryOnCombo>> getUserCombos({CancelToken? cancelToken}) async {
     return execute(() async {
       final response = await _dio.get(
-        '/tryon/combos/',
+        '/profile/combos/',
         cancelToken: cancelToken,
       );
 
@@ -40,7 +40,7 @@ class TryOnService extends BaseRepository {
   }) async {
     return execute(() async {
       final response = await _dio.post(
-        '/tryon/combos/',
+        '/profile/combos/',
         data: {'name': name.trim(), 'product_ids': productIds},
         cancelToken: cancelToken,
       );
@@ -58,7 +58,7 @@ class TryOnService extends BaseRepository {
   }) async {
     return execute(() async {
       final response = await _dio.get(
-        '/tryon/combos/$comboId/',
+        '/profile/combos/$comboId/',
         cancelToken: cancelToken,
       );
 
@@ -82,7 +82,7 @@ class TryOnService extends BaseRepository {
       };
 
       final response = await _dio.patch(
-        '/tryon/combos/$comboId/',
+        '/profile/combos/$comboId/',
         data: payload,
         cancelToken: cancelToken,
       );
@@ -100,7 +100,7 @@ class TryOnService extends BaseRepository {
   }) async {
     return execute(() async {
       final response = await _dio.delete(
-        '/tryon/combos/$comboId/',
+        '/profile/combos/$comboId/',
         cancelToken: cancelToken,
       );
 
@@ -116,7 +116,7 @@ class TryOnService extends BaseRepository {
   }) async {
     return execute(() async {
       final response = await _dio.post(
-        '/tryon/combos/$comboId/items/',
+        '/profile/combos/$comboId/items/',
         data: {'product_id': productId},
         cancelToken: cancelToken,
       );

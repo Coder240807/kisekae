@@ -81,9 +81,9 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     super.dispose();
   }
 
-  void _startTimer() {
+  void _startTimer([int seconds = 60]) {
     _timer?.cancel();
-    setState(() => _secondsLeft = 60);
+    setState(() => _secondsLeft = seconds);
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) return t.cancel();
       if (_secondsLeft <= 1) {
@@ -220,19 +220,24 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     if (!mounted) return;
     setState(() => _isResending = false);
 
-    if (response.success) _startTimer();
+    if (response.success) {
+      _startTimer();
+      return;
+    }
+
+    if (response.errorCode == 'RATE_LIMIT_EXCEEDED') {
+      final waitSeconds = response.errorDetails?['wait_seconds'];
+      if (waitSeconds is int && waitSeconds > 0) {
+        _startTimer(waitSeconds);
+        return;
+      }
+    }
 
     final message = response.message.isNotEmpty
         ? response.message
-        : (response.success
-              ? 'Verification code resent'
-              : 'Failed to resend code');
-
+        : 'Failed to resend code';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: response.success ? Colors.green : Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 

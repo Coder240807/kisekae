@@ -73,7 +73,7 @@ class _TryOnHistoryScreenState extends State<TryOnHistoryScreen> {
     if (item.isReady && (item.resultImageUrl ?? '').isNotEmpty) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => _ImageViewerScreen(
+          builder: (_) => TryOnImageViewerScreen(
             url: item.resultImageUrl!,
             title: _titleFor(item),
           ),
@@ -303,17 +303,108 @@ class _StatusPlaceholder extends StatelessWidget {
   }
 }
 
-class _ImageViewerScreen extends StatefulWidget {
+class TryOnDeepLinkScreen extends StatefulWidget {
+  final String requestId;
+
+  const TryOnDeepLinkScreen({super.key, required this.requestId});
+
+  @override
+  State<TryOnDeepLinkScreen> createState() => _TryOnDeepLinkScreenState();
+}
+
+class _TryOnDeepLinkScreenState extends State<TryOnDeepLinkScreen> {
+  final TryOnGenerationService _service = TryOnGenerationService();
+  final CancelToken _cancelToken = CancelToken();
+  bool _loading = true;
+  String? _error;
+  TryOnRequest? _request;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  @override
+  void dispose() {
+    _cancelToken.cancel('TryOnDeepLinkScreen disposed');
+    super.dispose();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final req = await _service.getRequest(
+        widget.requestId,
+        cancelToken: _cancelToken,
+      );
+      if (!mounted) return;
+      setState(() {
+        _request = req;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted || (e is DioException && CancelToken.isCancel(e))) return;
+      setState(() {
+        _error = 'Could not load the try-on result.';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
+    final req = _request;
+
+    if (req != null && req.isReady && (req.resultImageUrl ?? '').isNotEmpty) {
+      return TryOnImageViewerScreen(
+        url: req.resultImageUrl!,
+        title: _titleFor(req),
+      );
+    }
+
+    final message = req?.isFailed == true
+        ? (req?.errorMessage ?? 'This try-on could not be completed.')
+        : _error ?? 'The try-on result is not ready yet.';
+
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(backgroundColor: _bg, foregroundColor: Colors.black),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16, color: Colors.black54),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TryOnImageViewerScreen extends StatefulWidget {
   final String url;
   final String title;
 
-  const _ImageViewerScreen({required this.url, required this.title});
+  const TryOnImageViewerScreen({
+    super.key,
+    required this.url,
+    required this.title,
+  });
 
   @override
-  State<_ImageViewerScreen> createState() => _ImageViewerScreenState();
+  State<TryOnImageViewerScreen> createState() => _TryOnImageViewerScreenState();
 }
 
-class _ImageViewerScreenState extends State<_ImageViewerScreen> {
+class _TryOnImageViewerScreenState extends State<TryOnImageViewerScreen> {
   final CancelToken _cancelToken = CancelToken();
   bool _saving = false;
 

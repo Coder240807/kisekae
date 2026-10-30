@@ -3,6 +3,22 @@ import 'package:kisekae/models/auth_response.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/services/storage.dart';
 
+class AuthResponse {
+  final bool success;
+  final String message;
+  final Map<String, dynamic>? data;
+  final String? errorCode;
+  final Map<String, dynamic>? errorDetails;
+
+  AuthResponse(
+    this.success,
+    this.message, [
+    this.data,
+    this.errorCode,
+    this.errorDetails,
+  ]);
+}
+
 class EmailAuth {
   final Dio dio = DioClient.dio;
   final TokenStorage _tokenStorage = TokenStorage();
@@ -58,12 +74,21 @@ class EmailAuth {
       );
     } on DioException catch (e) {
       final body = e.response?.data;
-      return AuthResponse(
-        false,
-        body is Map
-            ? (body["message"]?.toString() ?? e.message ?? "Network error")
-            : (e.message ?? "Network error"),
-      );
+      if (body is Map) {
+        final error = body["error"];
+        final code = error is Map ? error["code"]?.toString() : null;
+        final details = error is Map && error["details"] is Map
+            ? Map<String, dynamic>.from(error["details"] as Map)
+            : null;
+        return AuthResponse(
+          false,
+          body["message"]?.toString() ?? e.message ?? "Network error",
+          null,
+          code,
+          details,
+        );
+      }
+      return AuthResponse(false, e.message ?? "Network error");
     } catch (e) {
       return AuthResponse(false, "Unexpected error: $e");
     }
@@ -78,12 +103,21 @@ class EmailAuth {
       return AuthResponse(true, response.data["message"]?.toString() ?? "");
     } on DioException catch (e) {
       final body = e.response?.data;
-      return AuthResponse(
-        false,
-        body is Map
-            ? body["message"].toString()
-            : (e.message ?? "Network error"),
-      );
+      if (body is Map) {
+        final error = body["error"];
+        final code = error is Map ? error["code"]?.toString() : null;
+        final details = error is Map && error["details"] is Map
+            ? Map<String, dynamic>.from(error["details"] as Map)
+            : null;
+        return AuthResponse(
+          false,
+          body["message"]?.toString() ?? e.message ?? "Network error",
+          null,
+          code,
+          details,
+        );
+      }
+      return AuthResponse(false, e.message ?? "Network error");
     } catch (e) {
       return AuthResponse(false, "Unexpected error: $e");
     }

@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:kisekae/core/notifications/notification_service.dart';
 import 'package:kisekae/screens/addresses.dart';
 import 'package:kisekae/screens/products_list.dart';
 import 'package:kisekae/screens/categories.dart';
 import 'package:kisekae/screens/wishlist_screen.dart';
+import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/widgets/best_deals.dart';
 import 'package:kisekae/widgets/bottom_bar.dart';
 import 'package:kisekae/widgets/searchbar.dart';
@@ -15,11 +19,50 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  StreamSubscription? _subscription;
+
   final List<String> brandImages = [
     'assets/images/brands/deals1.png',
     'assets/images/brands/deals2.png',
     'assets/images/brands/deals3.png',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _subscription = NotificationService().onTap.listen(_handleDeepLink);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pending = NotificationService().consumePendingDeepLink();
+      if (pending != null) _handleDeepLink(pending);
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _handleDeepLink(Map<String, dynamic> data) {
+    final deepLink = data['deep_link'] as String?;
+    if (deepLink == null) return;
+
+    final uri = Uri.tryParse(deepLink);
+    if (uri == null || uri.scheme != 'kisekae') return;
+
+    if (uri.host == 'orders') {
+      final rawId = uri.pathSegments.firstOrNull;
+      final orderId = int.tryParse(rawId ?? '');
+      if (orderId != null) {
+        navigatorKey.currentState?.pushNamed('/orders/$orderId');
+      }
+    } else if (uri.host == 'tryon') {
+      final requestId = uri.pathSegments.firstOrNull;
+      if (requestId != null && requestId.isNotEmpty) {
+        navigatorKey.currentState?.pushNamed('/tryon/$requestId');
+      }
+    }
+  }
 
   Widget _wishlistButton() {
     return Material(
