@@ -55,12 +55,9 @@ class CheckoutResponse {
     final rawOrders = json['orders'] as List<dynamic>? ?? [];
 
     final orders = rawOrders
-        .map(
-          (e) => CheckoutOrder.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) => CheckoutOrder.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
 
-    // requiresRazorpay: true if any order carries a razorpay_order_id
     final requiresRazorpay =
         orders.any((o) => o.razorpayOrderId.isNotEmpty) ||
         (json['requires_razorpay'] as bool? ?? false);

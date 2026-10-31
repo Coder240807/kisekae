@@ -54,9 +54,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isLoadingAddress = true;
   bool _isPlacingOrder = false;
 
-  // ── Razorpay key from .env ──────────────────────────────────────────────────
-  String get _razorpayKey =>
-      dotenv.env['RAZORPAY_KEY_ID'] ?? '';
+  String get _razorpayKey => dotenv.env['RAZORPAY_KEY_ID'] ?? '';
 
   @override
   void initState() {
@@ -184,7 +182,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  // ── Step 1: Place the order (creates Razorpay order on backend) ────────────
   Future<void> _placeOrder() async {
     final address = _selectedAddress;
     if (address == null || _isPlacingOrder) {
@@ -205,13 +202,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
 
       if (result.requiresRazorpay) {
-        // Open Razorpay checkout for the first order that has a razorpay_order_id.
-        // Multi-store carts may produce multiple orders; open one at a time.
-        final orderWithPayment =
-            result.orders.firstWhere((o) => o.razorpayOrderId.isNotEmpty);
+        final orderWithPayment = result.orders.firstWhere(
+          (o) => o.razorpayOrderId.isNotEmpty,
+        );
         _openRazorpay(orderWithPayment);
       } else {
-        // Fully covered by wallet or COD — skip to confirm page.
         _nextPage();
       }
     } catch (e) {
@@ -221,7 +216,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  // ── Step 2: Open the Razorpay checkout sheet ───────────────────────────────
   void _openRazorpay(CheckoutOrder order) {
     final amountInPaise = (double.tryParse(order.totalAmount) ?? 0) * 100;
 
@@ -232,10 +226,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       'order_id': order.razorpayOrderId,
       'name': 'KiseKae',
       'description': 'Order #${order.orderNumber}',
-      'prefill': {
-        'contact': '',
-        'email': '',
-      },
+      'prefill': {'contact': '', 'email': ''},
       'theme': {'color': '#8B2E3E'},
     };
 
@@ -247,12 +238,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  // ── Step 3a: Payment success — verify with backend ─────────────────────────
   void _onPaymentSuccess(PaymentSuccessResponse response) async {
     final result = _result;
     if (result == null) return;
 
-    // Find the matching order by razorpay_order_id
     final order = result.orders.firstWhere(
       (o) => o.razorpayOrderId == response.orderId,
       orElse: () => result.orders.first,
@@ -278,12 +267,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ? e.message
             : 'Payment received but verification failed. Contact support.',
       );
-      // Still advance to confirm — user has paid
       _nextPage();
     }
   }
 
-  // ── Step 3b: Payment failed / cancelled ───────────────────────────────────
   void _onPaymentError(PaymentFailureResponse response) {
     if (!mounted) return;
     setState(() => _isPlacingOrder = false);
@@ -294,7 +281,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // ── External wallet selected (informational) ───────────────────────────────
   void _onExternalWallet(ExternalWalletResponse response) {
     _showSnack('External wallet selected: ${response.walletName}');
   }
@@ -589,7 +575,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           const SizedBox(height: 4),
           _priceSummary(),
           const SizedBox(height: 8),
-          // Razorpay branding note
           const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

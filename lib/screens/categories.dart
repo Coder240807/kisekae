@@ -1,5 +1,8 @@
 import "package:flutter/material.dart";
-import "package:kisekae/screens/subcategories.dart";
+import "package:kisekae/screens/products_list.dart";
+import "package:kisekae/screens/subcategories/kids.dart";
+import "package:kisekae/screens/subcategories/mens.dart";
+import "package:kisekae/screens/subcategories/womens.dart";
 import "package:kisekae/widgets/bottom_bar.dart";
 import "package:kisekae/widgets/searchbar.dart";
 
@@ -15,7 +18,6 @@ class CategoriesScreen extends StatelessWidget {
     ("Ethnic Wear", "assets/images/category4.png", Alignment.center),
     ("Formals", "assets/images/category5.png", Alignment(0, -0.5)),
     ("Sports Wear", "assets/images/category6.png", Alignment.topCenter),
-    ("New Season", "assets/images/category7.png", Alignment.topCenter),
   ];
 
   @override
@@ -64,6 +66,31 @@ class CategoriesScreen extends StatelessWidget {
                       _categories[i].$1,
                       _categories[i].$2,
                       _categories[i].$3,
+                      () {
+                        late final Widget screen;
+                        switch (i) {
+                          case 0:
+                            screen = WomensSubCategoriesScreen();
+                            break;
+                          case 1:
+                            screen = MensSubCategoriesScreen();
+                            break;
+                          case 2:
+                            screen = KidsSubCategoriesScreen();
+                            break;
+                          case 3:
+                            screen = ProductListScreen(initialQuery: "Ethinic");
+                            break;
+                          case 4:
+                            screen = ProductListScreen(initialQuery: "Formals");
+                            break;
+                          case 5:
+                            screen = ProductListScreen(initialQuery: "Sports");
+                            break;
+                        }
+                        Navigator.of(context)
+                            .push(MaterialPageRoute(builder: (_) => screen));
+                      },
                       imageOnLeft: i.isOdd,
                     ),
                 ],
@@ -81,7 +108,8 @@ class CategoriesScreen extends StatelessWidget {
     BuildContext context,
     String label,
     String imageUrl,
-    Alignment alignment, {
+    Alignment alignment,
+    VoidCallback onTap, {
     required bool imageOnLeft,
   }) {
     final image = SizedBox(
@@ -97,11 +125,7 @@ class CategoriesScreen extends StatelessWidget {
     );
 
     return GestureDetector(
-      onTap: () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const SubCategoriesScreen()));
-      },
+      onTap: onTap,
       child: Container(
         height: 96,
         clipBehavior: Clip.antiAlias,

@@ -200,8 +200,6 @@ class _AdvertisementScreenState extends State<AdvertisementScreen> {
     }
   }
 
-  // ---------- UI ----------
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

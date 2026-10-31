@@ -139,12 +139,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           'bgColor': const Color(0xFFE1F5FE),
           'icon': Icons.local_shipping_outlined,
         };
-      case 'PROCESSING':
+      case 'OUT_FOR_DELIVERY':
         return {
-          'label': 'PROCESSING',
+          'label': 'OUT FOR DELIVERY',
           'color': const Color(0xFFE65100),
           'bgColor': const Color(0xFFFFE0B2),
-          'icon': Icons.sync,
+          'icon': Icons.delivery_dining_outlined,
         };
       case 'CANCELLED':
         return {
@@ -165,8 +165,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   void _showUpdateStatusSheet(BuildContext context) {
-    String selectedStatus = _order?.status.toUpperCase() ?? 'PROCESSING';
-    if (selectedStatus == 'PENDING') selectedStatus = 'PROCESSING';
+    const validStatuses = ['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+    String currentStatus = _order?.status.toUpperCase() ?? '';
+    String selectedStatus = validStatuses.contains(currentStatus)
+        ? currentStatus
+        : 'SHIPPED';
+
 
     final notesController = TextEditingController(text: _order?.notes ?? '');
     final trackingNumberController = TextEditingController(
@@ -224,11 +228,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       runSpacing: 8,
                       children: [
                         _statusChip(
-                          label: "PROCESSING",
+                          label: "OUT FOR DELIVERY",
                           color: const Color(0xFFE65100),
-                          isSelected: selectedStatus == "PROCESSING",
+                          isSelected: selectedStatus == "OUT_FOR_DELIVERY",
                           onTap: () => setSheetState(
-                            () => selectedStatus = "PROCESSING",
+                            () => selectedStatus = "OUT_FOR_DELIVERY",
                           ),
                         ),
                         _statusChip(
@@ -258,6 +262,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     const SizedBox(height: 16),
 
                     if (selectedStatus == "SHIPPED" ||
+                        selectedStatus == "OUT_FOR_DELIVERY" ||
                         selectedStatus == "DELIVERED") ...[
                       TextFormField(
                         controller: trackingNumberController,
@@ -306,7 +311,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           );
                         },
                         child: Text(
-                          "Update Status to $selectedStatus",
+                          "Update Status to ${selectedStatus.replaceAll('_', ' ')}",
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -445,7 +450,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Order Status & Header Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -459,12 +463,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
+                        Expanded(
+                          child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               "Order #${order.orderNumber}",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -474,6 +482,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             const SizedBox(height: 4),
                             Text(
                               "Placed on ${_formatDate(order.createdAt)}",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.black54,
@@ -481,7 +491,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             ),
                           ],
                         ),
-                        Container(
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 6,
@@ -491,6 +503,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 statusStyle['icon'] as IconData,
@@ -556,8 +569,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
 
               const SizedBox(height: 16),
-
-              // 2. Shipping & Customer Details Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -732,8 +743,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
 
               const SizedBox(height: 16),
-
-              // 4. Financial Total Summary Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),

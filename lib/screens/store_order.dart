@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/order_details.dart';
-import 'package:kisekae/screens/myorder_detail.dart';
+import 'package:kisekae/screens/orderdetail.dart';
 import 'package:kisekae/services/order_seller.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -139,70 +139,86 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ? '1 item'
         : '${order.itemsCount} items';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1F000000),
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 66,
-            height: 66,
-            decoration: BoxDecoration(
-              color: cs.surface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.shopping_bag_outlined,
-              size: 32,
-              color: cs.primary,
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OrderDetailScreen(
+              storeId: widget.storeId,
+              orderId: order.id,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  order.orderNumber,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurface,
+        );
+        if (mounted) {
+          _loadOrders();
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1F000000),
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 66,
+              height: 66,
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.shopping_bag_outlined,
+                size: 32,
+                color: cs.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order.orderNumber,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface,
+                    ),
                   ),
-                ),
-                _infoRow(
-                  cs,
-                  Icons.calendar_today_outlined,
-                  _formatDate(order.createdAt),
-                ),
-                _infoRow(
-                  cs,
-                  Icons.payments_outlined,
-                  '${_formatAmount(order.totalAmount, order.currency)} · $items',
-                ),
-                _infoRow(
-                  cs,
-                  Icons.local_shipping_outlined,
-                  'Delivery Status - ${_statusLabel(order.status)}',
-                  color: isCancelled ? cs.error : null,
-                ),
-              ],
+                  _infoRow(
+                    cs,
+                    Icons.calendar_today_outlined,
+                    _formatDate(order.createdAt),
+                  ),
+                  _infoRow(
+                    cs,
+                    Icons.payments_outlined,
+                    '${_formatAmount(order.totalAmount, order.currency)} · $items',
+                  ),
+                  _infoRow(
+                    cs,
+                    Icons.local_shipping_outlined,
+                    'Delivery Status - ${_statusLabel(order.status)}',
+                    color: isCancelled ? cs.error : null,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

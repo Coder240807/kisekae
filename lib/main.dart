@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:kisekae/firebase_options.dart';
 import 'package:kisekae/screens/getting_started.dart';
 import 'package:kisekae/screens/home_screen.dart';
+import 'package:kisekae/screens/season_sale_screen.dart';
 import 'package:kisekae/screens/myorder_detail.dart';
 import 'package:kisekae/screens/onboarding_screen.dart';
 import 'package:kisekae/screens/seller_start.dart';
@@ -96,6 +97,7 @@ class _MyAppState extends State<MyApp> {
         '/seller-store': (context) => const SellerGateScreen(),
         '/login': (context) => const GettingStartedScreen(),
         '/home': (context) => const HomeScreen(),
+        '/season-sale': (context) => const SeasonSaleScreen(),
       },
       onGenerateRoute: _generateRoute,
       home: _startScreen(),
