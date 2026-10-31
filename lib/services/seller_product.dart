@@ -32,12 +32,15 @@ class HandleProduct extends BaseRepository {
   }
 
   List<dynamic> _dataList(dynamic body) {
-    if (body is Map) {
-      final inner = body['data']['results'];
-      if (inner is List) return inner;
-      return [];
-    }
     if (body is List) return body;
+    if (body is Map) {
+      final inner = body['data'];
+      if (inner is List) return inner;
+      if (inner is Map && inner['results'] is List) {
+        return inner['results'] as List;
+      }
+      if (body['results'] is List) return body['results'] as List;
+    }
     return [];
   }
 
@@ -232,7 +235,7 @@ class HandleProduct extends BaseRepository {
       return list
           .map(
             (item) =>
-                ProductVariantImage.fromJson(item as Map<String, dynamic>),
+                ProductVariantImage.fromJson(Map<String, dynamic>.from(item as Map)),
           )
           .toList();
     });

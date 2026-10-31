@@ -3,8 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:kisekae/core/notifications/notification_service.dart';
 import 'package:kisekae/screens/addresses.dart';
-import 'package:kisekae/screens/products_list.dart';
 import 'package:kisekae/screens/categories.dart';
+import 'package:kisekae/screens/products_list.dart';
+import 'package:kisekae/screens/season_sale_screen.dart';
+import 'package:kisekae/screens/subcategories/kids.dart';
+import 'package:kisekae/screens/subcategories/mens.dart';
+import 'package:kisekae/screens/subcategories/womens.dart';
 import 'package:kisekae/screens/wishlist_screen.dart';
 import 'package:kisekae/services/dio.dart';
 import 'package:kisekae/widgets/best_deals.dart';
@@ -83,6 +87,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openSeasonSale() {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const SeasonSaleScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -156,21 +165,24 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 8),
-                  Container(
-                    width: 370,
-                    height: 250,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(
-                        color: const Color(0xFFE5DDD3),
-                        width: 1,
+                  GestureDetector(
+                    onTap: _openSeasonSale,
+                    child: Container(
+                      width: 370,
+                      height: 250,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: const Color(0xFFE5DDD3),
+                          width: 1,
+                        ),
                       ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(
-                        'assets/images/banner.png',
-                        fit: BoxFit.cover,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                          'assets/images/banner.png',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
@@ -204,21 +216,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         imageUrl: 'assets/images/clothes/4.jpg',
                         alignment: Alignment.topCenter,
                         label: 'Women',
+                        screen: WomensSubCategoriesScreen(),
                       ),
                       _CategoryImage(
                         imageUrl: 'assets/images/clothes/7.jpg',
                         alignment: Alignment.topCenter,
                         label: 'Men',
+                        screen: MensSubCategoriesScreen(),
                       ),
                       _CategoryImage(
                         imageUrl: 'assets/images/clothes/5.jpg',
                         alignment: Alignment.topCenter,
                         label: 'Kids',
+                        screen: KidsSubCategoriesScreen(),
                       ),
                       _CategoryImage(
                         imageUrl: 'assets/images/clothes/6.jpg',
                         alignment: Alignment(0, -0.5),
                         label: 'Formals',
+                        screen: ProductListScreen(initialQuery: "Formals"),
                       ),
                     ],
                   ),
@@ -387,39 +403,46 @@ class _CategoryImage extends StatelessWidget {
   final String imageUrl;
   final Alignment alignment;
   final String label;
+  final Widget screen;
 
   const _CategoryImage({
     required this.imageUrl,
     required this.alignment,
     required this.label,
+    required this.screen,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 27,
-            backgroundColor: const Color(0xFFDBBEC3),
-            child: ClipOval(
-              child: Image.asset(
-                imageUrl,
-                width: 52,
-                height: 52,
-                fit: BoxFit.cover,
-                alignment: alignment,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+        },
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 27,
+              backgroundColor: const Color(0xFFDBBEC3),
+              child: ClipOval(
+                child: Image.asset(
+                  imageUrl,
+                  width: 52,
+                  height: 52,
+                  fit: BoxFit.cover,
+                  alignment: alignment,
+                ),
               ),
             ),
-          ),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-          ),
-        ],
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }

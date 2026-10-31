@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kisekae/models/advertising.dart';
 import 'package:kisekae/models/api_exception.dart';
 import 'package:kisekae/models/seasonal_sale_seller.dart';
+import 'package:kisekae/screens/season_sale_screen.dart';
 import 'package:kisekae/services/format.dart';
 import 'package:kisekae/services/seasonal_sale_seller_service.dart';
 
@@ -199,6 +200,25 @@ class _PromotionDetailScreenState extends State<PromotionDetailScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          if (sale != null)
+            IconButton(
+              icon: Icon(Icons.visibility_outlined, color: cs.onSurface),
+              tooltip: 'Preview Sale',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => SeasonSaleScreen(
+                      seasonalSale: sale,
+                      title: sale.title,
+                      subtitle: sale.subtitle,
+                      bannerImageUrl: sale.bannerImage,
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
         title: Text(
           'Sale details',
           style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),

@@ -36,6 +36,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final Product _productService = Product();
   final WishlistService _wishlistService = WishlistService();
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   CancelToken? _searchCancelToken;
 
@@ -43,6 +44,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final Set<int> _wishlistedProductIds = {};
 
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = false;
+  int _currentPage = 1;
+  int _totalCount = 0;
   String _searchQuery = '';
 
   final List<FilterChipData> _apiFilters = const [
@@ -65,21 +70,54 @@ class _ProductListScreenState extends State<ProductListScreen> {
       _searchQuery = initialQuery;
       _searchController.text = initialQuery;
     }
+    _scrollController.addListener(_onScroll);
     _fetchProducts();
+    _loadWishlist();
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchCancelToken?.cancel("Screen disposed");
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    if (_products.isNotEmpty && currentScroll >= (maxScroll - 250)) {
+      _loadMoreProducts();
+    }
+  }
+
+  Future<void> _loadWishlist() async {
+    try {
+      final items = await _wishlistService.getWishlistItems();
+      if (!mounted) return;
+      setState(() {
+        _wishlistedProductIds.clear();
+        for (final item in items) {
+          _wishlistedProductIds.add(item.product.id);
+        }
+      });
+    } catch (_) {
+      // Ignored for unauthenticated users
+    }
   }
 
   Future<void> _fetchProducts() async {
     _searchCancelToken?.cancel("New search request initiated");
     _searchCancelToken = CancelToken();
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isLoadingMore = false;
+      _hasMore = false;
+      _currentPage = 1;
+    });
     try {
       final response = await _productService.getProducts(
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
@@ -90,12 +128,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
         color: _filters.color,
         minPrice: _filters.minPrice,
         maxPrice: _selectedFilter?.maxPrice ?? _filters.maxPrice,
+        page: 1,
         cancelToken: _searchCancelToken,
       );
 
       if (mounted) {
         setState(() {
           _products = response.results;
+          _totalCount = response.count;
+          _currentPage = 1;
+          _hasMore = response.next != null && response.results.isNotEmpty;
           _isLoading = false;
         });
       }
@@ -109,6 +151,42 @@ class _ProductListScreenState extends State<ProductListScreen> {
           SnackBar(content: Text('Failed to load products: ${e.toString()}')),
         );
       }
+    }
+  }
+
+  Future<void> _loadMoreProducts() async {
+    if (_isLoading || _isLoadingMore || !_hasMore) return;
+
+    setState(() => _isLoadingMore = true);
+    try {
+      final nextPage = _currentPage + 1;
+      final response = await _productService.getProducts(
+        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        ordering: _selectedFilter?.ordering ?? _filters.ordering,
+        category: _selectedFilter?.category,
+        inStock: _selectedFilter?.inStock,
+        size: _filters.size,
+        color: _filters.color,
+        minPrice: _filters.minPrice,
+        maxPrice: _selectedFilter?.maxPrice ?? _filters.maxPrice,
+        page: nextPage,
+        cancelToken: _searchCancelToken,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _currentPage = nextPage;
+        _products.addAll(response.results);
+        _totalCount = response.count;
+        _hasMore = response.next != null && response.results.isNotEmpty;
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      if (e is DioException && e.type == DioExceptionType.cancel) {
+        return;
+      }
+      if (!mounted) return;
+      setState(() => _isLoadingMore = false);
     }
   }
 
@@ -327,43 +405,80 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       onRefresh: _fetchProducts,
                       color: primaryColor,
                       child: _products.isEmpty
-                          ? const Center(
-                              child: Text(
-                                "No products found",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black54,
+                          ? const CustomScrollView(
+                              physics: AlwaysScrollableScrollPhysics(),
+                              slivers: [
+                                SliverFillRemaining(
+                                  hasScrollBody: false,
+                                  child: Center(
+                                    child: Text(
+                                      "No products found",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             )
-                          : GridView.builder(
+                          : CustomScrollView(
+                              controller: _scrollController,
                               physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: _products.length,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                              slivers: [
+                                SliverGrid(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 2,
                                     childAspectRatio: 0.68,
                                     crossAxisSpacing: 14,
                                     mainAxisSpacing: 16,
                                   ),
-                              itemBuilder: (context, index) {
-                                final product = _products[index];
-                                return GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    FocusScope.of(context).unfocus();
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => ProductDetailsScreen(
-                                          productId: product.id,
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
+                                      final product = _products[index];
+                                      return GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          FocusScope.of(context).unfocus();
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  ProductDetailsScreen(
+                                                productId: product.id,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: _buildProductCard(product),
+                                      );
+                                    },
+                                    childCount: _products.length,
+                                  ),
+                                ),
+                                if (_isLoadingMore)
+                                  const SliverToBoxAdapter(
+                                    child: Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 20),
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: 28,
+                                          height: 28,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: primaryColor,
+                                          ),
                                         ),
                                       ),
-                                    );
-                                  },
-                                  child: _buildProductCard(product),
-                                );
-                              },
+                                    ),
+                                  )
+                                else
+                                  const SliverToBoxAdapter(
+                                    child: SizedBox(height: 20),
+                                  ),
+                              ],
                             ),
                     ),
             ),

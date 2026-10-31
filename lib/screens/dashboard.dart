@@ -9,6 +9,7 @@ import 'package:kisekae/screens/advertising_screen.dart';
 import 'package:kisekae/screens/analytics_screen.dart';
 import 'package:kisekae/screens/multiple_stores.dart';
 import 'package:kisekae/screens/store_order.dart';
+import 'package:kisekae/screens/promotion_screen.dart';
 import 'package:kisekae/services/analytics.dart';
 import 'package:kisekae/services/seller_product.dart';
 import 'package:kisekae/widgets/seller_bottom_bar.dart';
@@ -91,6 +92,30 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => AdvertisementScreen(
+          storeId: widget.storeId,
+          loadStoreProducts: () async {
+            final products = await _productService.getStoreProducts(
+              storeId: widget.storeId,
+            );
+            return products
+                .map(
+                  (p) => PromotableProduct(
+                    id: p.id,
+                    name: p.name,
+                    price: double.tryParse(p.price) ?? 0,
+                  ),
+                )
+                .toList();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _openPromotions() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PromotionsScreen(
           storeId: widget.storeId,
           loadStoreProducts: () async {
             final products = await _productService.getStoreProducts(
@@ -306,6 +331,13 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               ),
             );
           },
+        ),
+        _buildQuickActionItem(
+          size,
+          colorScheme,
+          'assets/icons/promotions.svg',
+          'Promotions',
+          onTap: _openPromotions,
         ),
         _buildQuickActionItem(
           size,

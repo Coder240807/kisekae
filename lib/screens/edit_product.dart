@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kisekae/models/seller_product.dart';
+import 'package:kisekae/screens/productgallery.dart';
 import 'package:kisekae/services/seller_product.dart';
 
 class EditProductScreen extends StatefulWidget {
@@ -470,6 +471,54 @@ class _EditProductScreenState extends State<EditProductScreen> {
                 ],
               ),
             ),
+        if (v.id != null && v.id! > 0) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProductGalleryScreen(
+                      storeId: widget.product.storeId,
+                      productId: widget.product.id,
+                      variantId: v.id!,
+                      variantName: v.colorNameCtrl.text,
+                      initialPrimaryImageUrl: v.thumbnail,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.photo_library_outlined,
+                size: 16,
+                color: Color(0xFF8B2E3E),
+              ),
+              label: Text(
+                "Manage Photos"
+                "${v.imageCount > 0 ? ' (${v.imageCount})' : ''}",
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF8B2E3E),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                side: const BorderSide(
+                  color: Color(0xFF8B2E3E),
+                  width: 1,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -532,6 +581,9 @@ class _EditProductScreenState extends State<EditProductScreen> {
 }
 
 class _EditVariantData {
+  final int? id;
+  final String? thumbnail;
+  final int imageCount;
   final TextEditingController colorNameCtrl;
   final TextEditingController colorHexCtrl;
   final TextEditingController skuCtrl;
@@ -539,6 +591,9 @@ class _EditVariantData {
   final Map<String, TextEditingController> stockCtrls;
 
   _EditVariantData({
+    this.id,
+    this.thumbnail,
+    this.imageCount = 0,
     required this.colorNameCtrl,
     required this.colorHexCtrl,
     required this.skuCtrl,
@@ -552,6 +607,9 @@ class _EditVariantData {
       stockCtrls[sz.size] = TextEditingController(text: sz.stock.toString());
     }
     return _EditVariantData(
+      id: variant.id,
+      thumbnail: variant.thumbnail,
+      imageCount: variant.images.length,
       colorNameCtrl: TextEditingController(text: variant.colorName),
       colorHexCtrl: TextEditingController(text: variant.colorHex),
       skuCtrl: TextEditingController(text: variant.sku ?? ''),
@@ -562,6 +620,9 @@ class _EditVariantData {
 
   factory _EditVariantData.empty() {
     return _EditVariantData(
+      id: null,
+      thumbnail: null,
+      imageCount: 0,
       colorNameCtrl: TextEditingController(),
       colorHexCtrl: TextEditingController(text: '#'),
       skuCtrl: TextEditingController(),

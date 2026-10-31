@@ -4,32 +4,33 @@ import "package:kisekae/screens/search.dart";
 import "package:kisekae/widgets/bottom_bar.dart";
 import "package:kisekae/widgets/searchbar.dart";
 
-class SubCategoriesScreen extends StatefulWidget {
-  const SubCategoriesScreen({super.key});
+class MensSubCategoriesScreen extends StatefulWidget {
+  const MensSubCategoriesScreen({super.key});
 
   @override
-  State<SubCategoriesScreen> createState() => _SubCategoriesScreenState();
+  State<MensSubCategoriesScreen> createState() =>
+      _MensSubCategoriesScreenState();
 }
 
-class _SubCategoriesScreenState extends State<SubCategoriesScreen> {
+class _MensSubCategoriesScreenState extends State<MensSubCategoriesScreen> {
   static const List<String> _spotlightImages = [
-    'assets/images/deals/1.jpg',
-    'assets/images/deals/2.jpg',
-    'assets/images/deals/3.jpg',
+    'assets/images/deals/4.jpg',
+    'assets/images/deals/5.jpg',
+    'assets/images/deals/6.jpg',
   ];
 
-  static const String _festiveBanner = 'assets/images/banner.png';
+  static const String _festiveBanner = 'assets/images/banners/5.jpg';
 
   static const List<String> _festiveCards = [
-    'assets/images/festive1.png',
-    'assets/images/festive2.png',
-    'assets/images/festive3.png',
+    'assets/images/banners/6.jpg',
+    'assets/images/banners/7.jpg',
+    'assets/images/banners/8.jpg',
   ];
 
   static const List<String> _brandImages = [
-    'assets/images/brands/1.jpg',
-    'assets/images/brands/2.jpg',
-    'assets/images/brands/3.jpg',
+    'assets/images/brands/4.jpg',
+    'assets/images/brands/5.jpg',
+    'assets/images/brands/6.jpg',
   ];
 
   static const double _bannerHeight = 320;
@@ -83,7 +84,7 @@ class _SubCategoriesScreenState extends State<SubCategoriesScreen> {
         ),
         centerTitle: true,
         title: const Text(
-          "Women's fashion",
+          "Men's fashion",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         bottom: const PreferredSize(
@@ -110,22 +111,22 @@ class _SubCategoriesScreenState extends State<SubCategoriesScreen> {
                   Row(
                     children: [
                       _CategoryImage(
-                        imageUrl: 'assets/images/clothes/11.jpg',
+                        imageUrl: 'assets/images/clothes/19.jpg',
                         alignment: Alignment.topCenter,
-                        label: 'Women',
+                        label: 'Shirts',
                       ),
                       _CategoryImage(
-                        imageUrl: 'assets/images/clothes/12.jpg',
+                        imageUrl: 'assets/images/clothes/20.jpg',
                         alignment: Alignment.topCenter,
-                        label: 'Men',
+                        label: 'T-shirt',
                       ),
                       _CategoryImage(
-                        imageUrl: 'assets/images/clothes/13.jpg',
+                        imageUrl: 'assets/images/clothes/21.jpg',
                         alignment: Alignment.topCenter,
-                        label: 'Kids',
+                        label: 'Casuals',
                       ),
                       _CategoryImage(
-                        imageUrl: 'assets/images/clothes/14.jpg',
+                        imageUrl: 'assets/images/clothes/22.jpg',
                         alignment: Alignment(0, -0.5),
                         label: 'Formals',
                       ),
@@ -134,24 +135,24 @@ class _SubCategoriesScreenState extends State<SubCategoriesScreen> {
                   Row(
                     children: [
                       _CategoryImage(
-                        imageUrl: 'assets/images/clothes/15.jpg',
+                        imageUrl: 'assets/images/clothes/23.jpg',
                         alignment: Alignment.topCenter,
-                        label: 'Women',
+                        label: 'Jeans',
                       ),
                       _CategoryImage(
-                        imageUrl: 'assets/images/clothes/16.jpg',
+                        imageUrl: 'assets/images/clothes/24.jpg',
                         alignment: Alignment.topCenter,
-                        label: 'Men',
+                        label: 'Ethinic wear',
                       ),
                       _CategoryImage(
                         imageUrl: 'assets/images/clothes/17.jpg',
                         alignment: Alignment(0, -0.25),
-                        label: 'Kids',
+                        label: 'Jacket',
                       ),
                       _CategoryImage(
                         imageUrl: 'assets/images/clothes/18.jpg',
                         alignment: Alignment(0, -0.5),
-                        label: 'Formals',
+                        label: 'Winter wear',
                       ),
                     ],
                   ),
@@ -393,29 +394,40 @@ class _CategoryImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 27,
-            backgroundColor: const Color(0xFFDBBEC3),
-            child: ClipOval(
-              child: Image.asset(
-                imageUrl,
-                width: 52,
-                height: 52,
-                fit: BoxFit.cover,
-                alignment: alignment,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ProductListScreen(
+                initialQuery: label.replaceAll(RegExp(r'[^a-zA-Z0-9\s]'), ''),
               ),
             ),
-          ),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-          ),
-        ],
+          );
+        },
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 27,
+              backgroundColor: const Color(0xFFDBBEC3),
+              child: ClipOval(
+                child: Image.asset(
+                  imageUrl,
+                  width: 52,
+                  height: 52,
+                  fit: BoxFit.cover,
+                  alignment: alignment,
+                ),
+              ),
+            ),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }

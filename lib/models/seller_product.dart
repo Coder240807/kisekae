@@ -254,13 +254,15 @@ class VariantInput {
   final String? sku;
   final bool isActive;
   final List<ProductSizeInput> sizes;
+  final int? stock;
 
   VariantInput({
     required this.colorName,
     required this.colorHex,
     this.sku,
     this.isActive = true,
-    required this.sizes,
+    this.sizes = const [],
+    this.stock,
   });
 
   Map<String, dynamic> toJson() {
@@ -268,8 +270,11 @@ class VariantInput {
       'color_name': colorName,
       'color_hex': colorHex,
       'is_active': isActive,
-      'sizes': sizes.map((s) => s.toJson()).toList(),
     };
+    if (sizes.isNotEmpty) {
+      map['sizes'] = sizes.map((s) => s.toJson()).toList();
+    }
+    if (stock != null) map['stock'] = stock;
     if (sku != null && sku!.isNotEmpty) map['sku'] = sku;
     return map;
   }

@@ -5,6 +5,154 @@ import 'package:kisekae/screens/edit_product.dart';
 import 'package:kisekae/screens/productgallery.dart';
 import 'package:kisekae/services/seller_product.dart';
 
+class _ImageCarousel extends StatefulWidget {
+  final List<String> imageUrls;
+  final VoidCallback? onEdit;
+  const _ImageCarousel({required this.imageUrls, this.onEdit});
+
+  @override
+  State<_ImageCarousel> createState() => _ImageCarouselState();
+}
+
+class _ImageCarouselState extends State<_ImageCarousel> {
+  final PageController _pageCtrl = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final urls = widget.imageUrls;
+    return Column(
+      children: [
+        Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                height: 220,
+                width: double.infinity,
+                child: urls.isEmpty
+                    ? Container(
+                        color: const Color(0xFFE5DDD2),
+                        child: const Icon(
+                          Icons.checkroom,
+                          size: 48,
+                          color: Colors.grey,
+                        ),
+                      )
+                    : PageView.builder(
+                        controller: _pageCtrl,
+                        itemCount: urls.length,
+                        onPageChanged: (i) => setState(() => _currentPage = i),
+                        itemBuilder: (context, index) => Image.network(
+                          urls[index],
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: const Color(0xFFE5DDD2),
+                            child: const Icon(
+                              Icons.image_not_supported,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            if (widget.onEdit != null)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Material(
+                  color: Colors.black.withOpacity(0.65),
+                  borderRadius: BorderRadius.circular(20),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: widget.onEdit,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.photo_library_outlined,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            "Edit Photos",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (urls.length > 1)
+              Positioned(
+                bottom: 10,
+                right: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    "${_currentPage + 1}/${urls.length}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (urls.length > 1) ...[
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              urls.length,
+              (i) => AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: _currentPage == i ? 18 : 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: _currentPage == i
+                      ? const Color(0xFF8B2E3E)
+                      : const Color(0xFFE5DDD2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class SellerProductDetailScreen extends StatefulWidget {
   final int storeId;
   final int productId;
@@ -129,6 +277,103 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
     }
   }
 
+  Future<void> _openManagePhotos([ProductVariant? targetVariant]) async {
+    if (_product == null) return;
+    final variants = _product!.variants;
+    if (variants.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No variants available to attach photos.'),
+        ),
+      );
+      return;
+    }
+
+    ProductVariant? selectedVariant = targetVariant;
+    if (selectedVariant == null) {
+      if (variants.length == 1) {
+        selectedVariant = variants.first;
+      } else {
+        selectedVariant = await showModalBottomSheet<ProductVariant>(
+          context: context,
+          backgroundColor: const Color(0xFFFFF8F0),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (ctx) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        "Select Variant to Edit Photos",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const Divider(color: Color(0xFFE5DDD2)),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: variants.length,
+                        itemBuilder: (ctx, i) {
+                          final v = variants[i];
+                          return ListTile(
+                            leading: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _tryParseHex(v.colorHex) ?? Colors.grey,
+                                border: Border.all(color: Colors.black26),
+                              ),
+                            ),
+                            title: Text(v.colorName),
+                            subtitle: Text("${v.images.length} photo(s)"),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => Navigator.pop(ctx, v),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      }
+    }
+
+    if (selectedVariant != null && mounted) {
+      final refreshed = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProductGalleryScreen(
+            storeId: widget.storeId,
+            productId: widget.productId,
+            variantId: selectedVariant!.id,
+            variantName: selectedVariant.colorName,
+            initialPrimaryImageUrl: selectedVariant.thumbnail,
+          ),
+        ),
+      );
+      if (refreshed == true && mounted) {
+        _fetchProductDetails();
+      }
+    }
+  }
+
   String _formatCurrency(String amount, String currency) {
     final parsed = double.tryParse(amount) ?? 0.0;
     final symbol = currency.toUpperCase() == 'INR'
@@ -230,6 +475,19 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
     final product = _product!;
     final statusStyle = _getStatusStyle(product.status, product.totalStock);
 
+    final allImages = <String>[
+      for (final v in product.variants)
+        for (final img in v.images)
+          if (img.imageUrl.isNotEmpty) img.imageUrl,
+    ];
+    if (allImages.isEmpty) {
+      if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
+        allImages.add(product.imageUrl!);
+      } else if (product.thumbnail != null && product.thumbnail!.isNotEmpty) {
+        allImages.add(product.thumbnail!);
+      }
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -313,37 +571,9 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                 ),
                 child: Column(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child:
-                          product.imageUrl != null &&
-                              product.imageUrl!.isNotEmpty
-                          ? Image.network(
-                              product.imageUrl!,
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                height: 180,
-                                width: double.infinity,
-                                color: const Color(0xFFE5DDD2),
-                                child: const Icon(
-                                  Icons.image_not_supported,
-                                  size: 48,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            )
-                          : Container(
-                              height: 180,
-                              width: double.infinity,
-                              color: const Color(0xFFE5DDD2),
-                              child: const Icon(
-                                Icons.checkroom,
-                                size: 48,
-                                color: Colors.grey,
-                              ),
-                            ),
+                    _ImageCarousel(
+                      imageUrls: allImages,
+                      onEdit: () => _openManagePhotos(),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -508,7 +738,8 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                               height: 20,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: _tryParseHex(variant.colorHex) ??
+                                color:
+                                    _tryParseHex(variant.colorHex) ??
                                     Colors.grey,
                                 border: Border.all(color: Colors.black26),
                               ),
@@ -563,6 +794,39 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                             ],
                           ),
                         ],
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _openManagePhotos(variant),
+                            icon: const Icon(
+                              Icons.photo_library_outlined,
+                              size: 16,
+                              color: Color(0xFF8B2E3E),
+                            ),
+                            label: Text(
+                              "Manage Photos"
+                              "${variant.images.isNotEmpty ? ' (${variant.images.length})' : ''}",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8B2E3E),
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              side: const BorderSide(
+                                color: Color(0xFF8B2E3E),
+                                width: 1,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 12),
                       ],
                     ],

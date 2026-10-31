@@ -29,6 +29,7 @@ class DioClient {
     '/accounts/otp',
     '/accounts/token/refresh',
     '/accounts/logout',
+    '/accounts/oauth/',
   ];
 
   static const _jsonHeaders = {
@@ -68,9 +69,6 @@ class DioClient {
             if (result.token != null) {
               options.headers['Authorization'] = 'Bearer ${result.token}';
               options.extra['retried'] = true;
-
-              // A FormData can only be sent once, so give the retry a
-              // fresh copy (covers image uploads and invites).
               final body = options.data;
               if (body is FormData) options.data = body.clone();
 

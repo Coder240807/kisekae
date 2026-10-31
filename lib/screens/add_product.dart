@@ -11,22 +11,24 @@ class _VariantData {
   final TextEditingController colorNameCtrl = TextEditingController();
   final TextEditingController colorHexCtrl = TextEditingController(text: '#');
   final TextEditingController skuCtrl = TextEditingController();
+  final TextEditingController directStockCtrl = TextEditingController();
   final Set<String> selectedSizes = {};
   final Map<String, TextEditingController> stockCtrls = {
-    for (final s in AddProductScreen._sizes) s: TextEditingController(),
+    for (final s in AddProductScreen._allSizes) s: TextEditingController(),
   };
 
   void dispose() {
     colorNameCtrl.dispose();
     colorHexCtrl.dispose();
     skuCtrl.dispose();
+    directStockCtrl.dispose();
     for (final c in stockCtrls.values) {
       c.dispose();
     }
   }
 
-  List<String> get chosenSizes => [
-    for (final s in AddProductScreen._sizes)
+  List<String> chosenSizes(List<String> available) => [
+    for (final s in available)
       if (selectedSizes.contains(s)) s,
   ];
 }
@@ -36,7 +38,30 @@ class AddProductScreen extends StatefulWidget {
 
   const AddProductScreen({super.key, required this.storeId});
 
-  static const List<String> _sizes = ['XS', 'S', 'M', 'L', 'XL'];
+  static const List<String> _clothingSizes = ['XS', 'S', 'M', 'L', 'XL'];
+  static const List<String> _footwearSizes = [
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+    '11',
+    '12',
+  ];
+  static const List<String> _allSizes = [
+    'XS',
+    'S',
+    'M',
+    'L',
+    'XL',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+    '11',
+    '12',
+  ];
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -49,11 +74,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
   static const _maxImageBytes = 5 * 1024 * 1024;
   static const _allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
 
+  static const _productTypes = <(String, String)>[
+    ('Men', 'MEN'),
+    ('Women', 'WOMEN'),
+    ('Kids', 'KIDS'),
+    ('Ethnic', 'ETHNIC'),
+    ('Traditional', 'TRADITIONAL'),
+    ('Formal', 'FORMAL'),
+    ('Sports', 'SPORTS'),
+  ];
+
   static const _categories = <(String, String)>[
     ('Top', 'TOP'),
     ('Bottom', 'BOTTOM'),
     ('One-Piece', 'ONE_PIECE'),
     ('Footwear', 'FOOTWEAR'),
+    ('Headwear', 'HEADWEAR'),
+    ('Eyewear', 'EYEWEAR'),
+    ('Outerwear', 'OUTERWEAR'),
+    ('Accessories', 'ACCESSORIES'),
   ];
 
   static final _nameRegex = RegExp(
@@ -78,7 +117,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _skuCtrl = TextEditingController();
+  String? _productType = 'MEN';
   String? _category;
+
+  bool get _hasNoSizes => _category == 'EYEWEAR' || _category == 'ACCESSORIES';
+
+  List<String> get _currentSizes {
+    if (_category == 'FOOTWEAR') {
+      return AddProductScreen._footwearSizes;
+    }
+    if (_hasNoSizes) {
+      return const [];
+    }
+    return AddProductScreen._clothingSizes;
+  }
 
   final List<File> _images = [];
   final _picker = ImagePicker();
@@ -159,13 +211,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (!_hexRegex.hasMatch(colorHex)) {
         return 'Enter a valid hex colour (#RRGGBB) for variant ${i + 1}';
       }
-      if (v.selectedSizes.isEmpty) {
-        return 'Select at least one size for variant ${i + 1}';
-      }
-      for (final s in v.chosenSizes) {
-        final stock = v.stockCtrls[s]!.text.trim();
+      if (_hasNoSizes) {
+        final stock = v.directStockCtrl.text.trim();
         if (!_stockRegex.hasMatch(stock)) {
-          return 'Enter stock quantity for size $s in variant ${i + 1}';
+          return 'Enter stock quantity for variant ${i + 1}';
+        }
+      } else {
+        final chosen = v.chosenSizes(_currentSizes);
+        if (chosen.isEmpty) {
+          return 'Select at least one size for variant ${i + 1}';
+        }
+        for (final s in chosen) {
+          final stock = v.stockCtrls[s]!.text.trim();
+          if (!_stockRegex.hasMatch(stock)) {
+            return 'Enter stock quantity for size $s in variant ${i + 1}';
+          }
         }
       }
     }
@@ -249,13 +309,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
           colorHex: v.colorHexCtrl.text.trim(),
           sku: v.skuCtrl.text.trim().isEmpty ? null : v.skuCtrl.text.trim(),
           isActive: true,
-          sizes: [
-            for (final s in v.chosenSizes)
-              ProductSizeInput(
-                size: s,
-                stock: int.parse(v.stockCtrls[s]!.text.trim()),
-              ),
-          ],
+          sizes: _hasNoSizes
+              ? const []
+              : [
+                  for (final s in v.chosenSizes(_currentSizes))
+                    ProductSizeInput(
+                      size: s,
+                      stock: int.parse(v.stockCtrls[s]!.text.trim()),
+                    ),
+                ],
+          stock: _hasNoSizes ? int.parse(v.directStockCtrl.text.trim()) : null,
         ),
     ];
   }
@@ -276,6 +339,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         final request = CreateProductRequest(
           name: _nameCtrl.text.trim(),
           category: _category!,
+          productType: _productType,
           description: description.isEmpty ? null : description,
           price: _priceCtrl.text.trim(),
           compareAtPrice: mrp.isEmpty ? null : mrp,
@@ -552,7 +616,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     ),
   );
 
-  Widget _imageBox({required Widget child, double? size}) {
+  Widget _imageBox({required Widget child, double? size, double radius = 16}) {
     final cs = Theme.of(context).colorScheme;
     return Container(
       width: size,
@@ -560,10 +624,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: cs.onSurface),
       ),
-      child: child,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius > 1 ? radius - 1 : radius),
+        child: child,
+      ),
     );
   }
 
@@ -603,6 +670,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ],
           ),
           const SizedBox(height: 16),
+          _label('Product Type'),
+          DropdownButtonFormField<String>(
+            initialValue: _productType,
+            decoration: _dec('Select product type'),
+            dropdownColor: cs.surfaceContainerHighest,
+            items: [
+              for (final t in _productTypes)
+                DropdownMenuItem(value: t.$2, child: Text(t.$1)),
+            ],
+            onChanged: (v) => setState(() => _productType = v),
+          ),
+          const SizedBox(height: 16),
           _label('Category'),
           DropdownButtonFormField<String>(
             initialValue: _category,
@@ -612,7 +691,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
               for (final c in _categories)
                 DropdownMenuItem(value: c.$2, child: Text(c.$1)),
             ],
-            onChanged: (v) => setState(() => _category = v),
+            onChanged: (v) {
+              setState(() {
+                if (_category != v) {
+                  _category = v;
+                  for (final variant in _variants) {
+                    variant.selectedSizes.clear();
+                  }
+                }
+              });
+            },
           ),
           const SizedBox(height: 16),
           _label('SKU (optional)'),
@@ -819,10 +907,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               TextButton.icon(
                 onPressed: () => setState(() => _variants.add(_VariantData())),
                 icon: Icon(Icons.add, color: cs.primary),
-                label: Text(
-                  'Add Variant',
-                  style: TextStyle(color: cs.primary),
-                ),
+                label: Text('Add Variant', style: TextStyle(color: cs.primary)),
               ),
             ],
           ),
@@ -898,71 +983,86 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ],
             decoration: _dec('e.g. TEE-CHAR-01'),
           ),
-          const SizedBox(height: 12),
-          _label('Sizes'),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (final s in AddProductScreen._sizes)
-                GestureDetector(
-                  onTap: () => setState(() {
-                    if (!v.selectedSizes.remove(s)) v.selectedSizes.add(s);
-                  }),
-                  child: Container(
-                    width: 52,
-                    height: 38,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: v.selectedSizes.contains(s)
-                          ? cs.primary.withOpacity(0.15)
-                          : cs.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: cs.primary,
-                        width: v.selectedSizes.contains(s) ? 2 : 1,
+          if (_hasNoSizes) ...[
+            const SizedBox(height: 12),
+            _label('Stock Quantity'),
+            TextField(
+              controller: v.directStockCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
+              decoration: _dec('Enter stock quantity'),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            _label('Sizes'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final s in _currentSizes)
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      if (!v.selectedSizes.remove(s)) v.selectedSizes.add(s);
+                    }),
+                    child: Container(
+                      width: 52,
+                      height: 38,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: v.selectedSizes.contains(s)
+                            ? cs.primary.withOpacity(0.15)
+                            : cs.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: cs.primary,
+                          width: v.selectedSizes.contains(s) ? 2 : 1,
+                        ),
+                      ),
+                      child: Text(
+                        s,
+                        style: TextStyle(fontSize: 15, color: cs.onSurface),
                       ),
                     ),
-                    child: Text(
-                      s,
-                      style: TextStyle(fontSize: 15, color: cs.onSurface),
-                    ),
+                  ),
+              ],
+            ),
+            if (v.chosenSizes(_currentSizes).isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _label('Stock Quantity'),
+              for (final s in v.chosenSizes(_currentSizes))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 44,
+                        child: Text(
+                          s,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: v.stockCtrls[s],
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(6),
+                          ],
+                          decoration: _dec('Stock for $s'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
             ],
-          ),
-          if (v.selectedSizes.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _label('Stock Quantity'),
-            for (final s in v.chosenSizes)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 44,
-                      child: Text(
-                        s,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: v.stockCtrls[s],
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(6),
-                        ],
-                        decoration: _dec('Stock for $s'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ],
       ),
@@ -971,6 +1071,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   Widget _reviewPage() {
     final cs = Theme.of(context).colorScheme;
+    final productTypeLabel = _productTypes
+        .where((t) => t.$2 == _productType)
+        .map((t) => t.$1)
+        .join();
     final categoryLabel = _categories
         .where((c) => c.$2 == _category)
         .map((c) => c.$1)
@@ -1039,6 +1143,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                 heading('Basic Details'),
                 row('Name', _nameCtrl.text.trim()),
+                if (productTypeLabel.isNotEmpty)
+                  row('Product Type', productTypeLabel),
                 row('Category', categoryLabel),
                 row('SKU', _skuCtrl.text.trim()),
                 row('Description', _descCtrl.text.trim()),
@@ -1079,8 +1185,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       ),
                     ),
                   ),
-                  for (final s in _variants[i].chosenSizes)
-                    row('  Size $s', _variants[i].stockCtrls[s]!.text.trim()),
+                  if (_hasNoSizes)
+                    row('  Stock', _variants[i].directStockCtrl.text.trim())
+                  else
+                    for (final s in _variants[i].chosenSizes(_currentSizes))
+                      row('  Size $s', _variants[i].stockCtrls[s]!.text.trim()),
                 ],
               ],
             ),

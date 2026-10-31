@@ -297,6 +297,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                       _buildLabel("State"),
                       DropdownButtonFormField<String>(
                         value: _selectedState,
+                        isExpanded: true,
                         decoration: _inputDecoration(hintText: "Select"),
                         items: _indianStates.map((state) {
                           return DropdownMenuItem(
